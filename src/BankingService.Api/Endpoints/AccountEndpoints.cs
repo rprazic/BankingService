@@ -1,6 +1,6 @@
 using BankingService.Application;
 using BankingService.Application.Commands.CreateAccount;
-using BankingService.Application.Common;
+using BankingService.Application.Commands.Deposit;
 using BankingService.Api.Middleware;
 using BankingService.Application.Queries.GetAccountBalance;
 using BankingService.Application.Queries.GetAccountDetails;
@@ -28,6 +28,10 @@ public static class AccountEndpoints
         group.MapGet("/{accountId:guid}/balance", GetAccountBalance)
             .WithSummary("Get account balance")
             .WithDescription("Returns current balance only.");
+
+        group.MapPost("/{accountId:guid}/deposits", Deposit)
+            .WithSummary("Deposit")
+            .WithDescription("Deposits money into an account and returns the new balance.");
 
         return app;
     }
@@ -64,9 +68,22 @@ public static class AccountEndpoints
             : Results.UnprocessableEntity(new ErrorResponse(result.Errors));
     }
 
+    private static async Task<IResult> Deposit(Guid accountId, [FromBody] DepositRequest request,
+        IAccountService accountService, CancellationToken ct)
+    {
+        var command = new DepositCommand(accountId, new Money(request.Amount, request.Currency));
+        var result = await accountService.DepositAsync(command, ct);
+
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : Results.UnprocessableEntity(new ErrorResponse(result.Errors));
+    }
+
     private sealed record CreateAccountRequest(
         string FirstName,
         string LastName,
         decimal InitialDeposit,
         Currency Currency);
+
+    private sealed record DepositRequest(decimal Amount, Currency Currency);
 }
