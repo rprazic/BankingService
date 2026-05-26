@@ -1,9 +1,11 @@
+using BankingService.Application.Commands.CreateAccount;
+using BankingService.Application.Common;
+
 namespace BankingService.Application;
 
 public interface IAccountService
 {
-    // TODO: unlock - CreateAccount
-    // Task<Result<Guid>> CreateAccountAsync(CreateAccountCommand command, CancellationToken ct);
+    Task<Result<Guid>> CreateAccountAsync(CreateAccountCommand command, CancellationToken ct);
 
     // TODO: unlock - Deposit
     // Task<Result<decimal>> DepositAsync(DepositCommand command, CancellationToken ct);
