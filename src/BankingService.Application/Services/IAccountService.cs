@@ -1,6 +1,8 @@
 using BankingService.Application.Commands.CreateAccount;
 using BankingService.Application.Common;
 using BankingService.Application.DTOs;
+using BankingService.Application.Queries.GetAccountBalance;
+using BankingService.Application.Queries.GetAccountDetails;
 using BankingService.Application.Queries.GetAccountTransactions;
 
 namespace BankingService.Application;
@@ -18,11 +20,9 @@ public interface IAccountService
     // TODO: unlock - Transfer
     // Task<Result> TransferAsync(TransferCommand command, CancellationToken ct);
 
-    // TODO: unlock - GetAccountDetails
-    // Task<Result<AccountDto>> GetAccountDetailsAsync(GetAccountDetailsQuery query, CancellationToken ct);
+    Task<Result<AccountDto>> GetAccountDetailsAsync(GetAccountDetailsQuery query, CancellationToken ct);
 
-    // TODO: unlock - GetAccountBalance
-    // Task<Result<AccountBalanceDto>> GetAccountBalanceAsync(GetAccountBalanceQuery query, CancellationToken ct);
+    Task<Result<AccountBalanceDto>> GetAccountBalanceAsync(GetAccountBalanceQuery query, CancellationToken ct);
 
     Task<Result<PagedResult<TransactionDto>>> GetAccountTransactionsAsync(GetAccountTransactionsQuery query, CancellationToken ct);
 }

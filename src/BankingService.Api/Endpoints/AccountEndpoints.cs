@@ -2,6 +2,8 @@ using BankingService.Application;
 using BankingService.Application.Commands.CreateAccount;
 using BankingService.Application.Common;
 using BankingService.Api.Middleware;
+using BankingService.Application.Queries.GetAccountBalance;
+using BankingService.Application.Queries.GetAccountDetails;
 using BankingService.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,6 +20,14 @@ public static class AccountEndpoints
             .WithSummary("Create account")
             .WithDescription("Opens a new bank account with an initial deposit.");
 
+        group.MapGet("/{accountId:guid}", GetAccountDetails)
+            .WithSummary("Get account details")
+            .WithDescription("Returns full account details including current balance.");
+
+        group.MapGet("/{accountId:guid}/balance", GetAccountBalance)
+            .WithSummary("Get account balance")
+            .WithDescription("Returns current balance only.");
+
         return app;
     }
 
@@ -30,6 +40,26 @@ public static class AccountEndpoints
 
         return result.IsSuccess
             ? Results.Created($"/api/v1/accounts/{result.Value}", new { AccountId = result.Value })
+            : Results.UnprocessableEntity(new ErrorResponse(result.Errors));
+    }
+
+    private static async Task<IResult> GetAccountDetails(Guid accountId,
+        IAccountService accountService, CancellationToken ct)
+    {
+        var result = await accountService.GetAccountDetailsAsync(new GetAccountDetailsQuery(accountId), ct);
+
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : Results.UnprocessableEntity(new ErrorResponse(result.Errors));
+    }
+
+    private static async Task<IResult> GetAccountBalance(Guid accountId,
+        IAccountService accountService, CancellationToken ct)
+    {
+        var result = await accountService.GetAccountBalanceAsync(new GetAccountBalanceQuery(accountId), ct);
+
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
             : Results.UnprocessableEntity(new ErrorResponse(result.Errors));
     }
 
