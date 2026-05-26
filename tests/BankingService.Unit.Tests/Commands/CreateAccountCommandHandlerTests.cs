@@ -94,6 +94,31 @@ public class CreateAccountCommandHandlerTests : IDisposable
         account?.Iban.Should().NotBeNullOrWhiteSpace();
     }
 
+    [Fact]
+    public async Task HandleAsync_WithPositiveInitialDeposit_CreatesCreditTransaction()
+    {
+        var command = ValidCommand();
+
+        await _sut.HandleAsync(command, CancellationToken.None);
+
+        var transaction = await _context.Transactions.FirstOrDefaultAsync();
+        transaction.Should().NotBeNull();
+        transaction.Type.Should().Be(TransactionType.Credit);
+        transaction.Amount.Amount.Should().Be(command.InitialDeposit);
+        transaction.Description.Should().Be("Initial deposit");
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithZeroInitialDeposit_DoesNotCreateTransaction()
+    {
+        var command = new CreateAccountCommand("Ratko", "Prazic", 0m, Currency.EUR);
+
+        await _sut.HandleAsync(command, CancellationToken.None);
+
+        var count = await _context.Transactions.CountAsync();
+        count.Should().Be(0);
+    }
+
     private static CreateAccountCommand ValidCommand() =>
         new("Ratko", "Prazic", 1000m, Currency.EUR);
 }

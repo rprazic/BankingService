@@ -15,7 +15,7 @@ public class CreateAccountCommandValidator : AbstractValidator<CreateAccountComm
             .MaximumLength(100).WithMessage("Last name must not exceed 100 characters.");
 
         RuleFor(x => x.InitialDeposit)
-            .GreaterThan(0).WithMessage("Initial deposit must be greater than zero.");
+            .GreaterThanOrEqualTo(0).WithMessage("Initial deposit must be greater than or equal to zero.");
 
         RuleFor(x => x.Currency)
             .IsInEnum().WithMessage("Currency is not supported.");

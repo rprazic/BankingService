@@ -1,6 +1,7 @@
 using BankingService.Application.Common;
 using BankingService.Application.CQRS;
 using BankingService.Domain.Entities;
+using BankingService.Domain.Enums;
 using BankingService.Domain.ValueObjects;
 using BankingService.Infrastructure.Persistence;
 using BankingService.Infrastructure.Services;
@@ -37,6 +38,19 @@ public class CreateAccountCommandHandler : ICommandHandler<CreateAccountCommand,
         };
 
         _context.Accounts.Add(account);
+
+        if (command.InitialDeposit > 0)
+        {
+            _context.Transactions.Add(new Transaction
+            {
+                TransactionId = Guid.NewGuid(),
+                AccountId = account.AccountId,
+                Type = TransactionType.Credit,
+                Amount = new Money(command.InitialDeposit, command.Currency),
+                Description = "Initial deposit",
+                CreatedAt = now
+            });
+        }
 
         if (saveChanges)
         {
