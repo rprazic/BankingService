@@ -1,0 +1,30 @@
+using BankingService.Infrastructure;
+using BankingService.Api.Extensions;
+using BankingService.Api.Middleware;
+using Scalar.AspNetCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHealthChecks();
+builder.Services.AddOpenApi();
+
+var app = builder.Build();
+
+await app.MigrateDatabaseAsync();
+
+app.UseMiddleware<ExceptionMiddleware>();
+
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
+{
+    options.Title = "BankingService API";
+    options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
+});
+
+app.MapHealthChecks("/health");
+
+// TODO: Account endpoints registered here as features are unlocked
+// app.MapAccountEndpoints();
+
+app.Run();
