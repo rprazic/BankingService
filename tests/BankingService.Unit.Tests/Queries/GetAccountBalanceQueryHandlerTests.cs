@@ -46,9 +46,9 @@ public class GetAccountBalanceQueryHandlerTests : IDisposable
         var result = await _sut.HandleAsync(new GetAccountBalanceQuery(account.AccountId), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value!.AccountId.Should().Be(account.AccountId);
-        result.Value.Balance.Should().Be(2500m);
-        result.Value.Currency.Should().Be(Currency.EUR);
+        result.Value?.AccountId.Should().Be(account.AccountId);
+        result.Value?.Balance.Amount.Should().Be(2500m);
+        result.Value?.Balance.Currency.Should().Be(Currency.EUR);
     }
 
     [Fact]

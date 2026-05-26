@@ -48,8 +48,7 @@ public class GetAccountTransactionsQueryHandler
             .Select(t => new TransactionDto(
                 t.TransactionId,
                 t.Type,
-                t.Amount.Amount,
-                t.Amount.Currency,
+                new MoneyDto(t.Amount.Amount, t.Amount.Currency),
                 t.RelatedAccountId,
                 t.Description,
                 t.CreatedAt))

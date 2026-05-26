@@ -5,6 +5,7 @@ using BankingService.Api.Middleware;
 using BankingService.Application.Queries.GetAccountBalance;
 using BankingService.Application.Queries.GetAccountDetails;
 using BankingService.Domain.Enums;
+using BankingService.Domain.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BankingService.Api.Endpoints;
@@ -34,8 +35,8 @@ public static class AccountEndpoints
     private static async Task<IResult> CreateAccount([FromBody] CreateAccountRequest request,
         IAccountService accountService, CancellationToken ct)
     {
-        var command = new CreateAccountCommand(request.FirstName, request.LastName, request.InitialDeposit,
-            request.Currency);
+        var command = new CreateAccountCommand(request.FirstName, request.LastName,
+            new Money(request.InitialDeposit, request.Currency));
         var result = await accountService.CreateAccountAsync(command, ct);
 
         return result.IsSuccess

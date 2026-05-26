@@ -1,5 +1,3 @@
-using BankingService.Domain.Enums;
-
 namespace BankingService.Application.DTOs;
 
 public record AccountDto(
@@ -7,7 +5,6 @@ public record AccountDto(
     string FirstName,
     string LastName,
     string Iban,
-    Currency Currency,
-    decimal Balance,
+    MoneyDto Balance,
     DateTime CreatedAt
 );

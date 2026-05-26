@@ -1,5 +1,3 @@
-using BankingService.Application.Common;
-using BankingService.Application.DTOs;
 using BankingService.Application.Queries.GetAccountTransactions;
 using BankingService.Domain.Entities;
 using BankingService.Domain.Enums;
@@ -97,7 +95,7 @@ public class GetAccountTransactionsQueryHandlerTests : IDisposable
 
         result.IsSuccess.Should().BeTrue();
         result.Value?.TotalCount.Should().Be(1);
-        result.Value?.Items[0].Amount.Should().Be(200m);
+        result.Value?.Items[0].Amount.Amount.Should().Be(200m);
     }
 
     [Fact]
@@ -118,7 +116,7 @@ public class GetAccountTransactionsQueryHandlerTests : IDisposable
 
         result.IsSuccess.Should().BeTrue();
         result.Value?.TotalCount.Should().Be(1);
-        result.Value?.Items[0].Amount.Should().Be(100m);
+        result.Value?.Items[0].Amount.Amount.Should().Be(100m);
     }
 
     [Fact]
@@ -141,7 +139,7 @@ public class GetAccountTransactionsQueryHandlerTests : IDisposable
 
         result.IsSuccess.Should().BeTrue();
         result.Value?.TotalCount.Should().Be(1);
-        result.Value?.Items[0].Amount.Should().Be(100m);
+        result.Value?.Items[0].Amount.Amount.Should().Be(100m);
     }
 
     [Fact]
@@ -160,7 +158,7 @@ public class GetAccountTransactionsQueryHandlerTests : IDisposable
         var result = await _sut.HandleAsync(new GetAccountTransactionsQuery(account.AccountId), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value?.Items.Select(t => t.Amount).Should().ContainInOrder(300m, 200m, 100m);
+        result.Value?.Items.Select(t => t.Amount.Amount).Should().ContainInOrder(300m, 200m, 100m);
     }
 
     [Fact]

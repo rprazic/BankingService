@@ -1,5 +1,6 @@
 using BankingService.Application.Commands.CreateAccount;
 using BankingService.Domain.Enums;
+using BankingService.Domain.ValueObjects;
 using BankingService.Infrastructure.Persistence;
 using BankingService.Infrastructure.Services;
 using FluentAssertions;
@@ -57,7 +58,7 @@ public class CreateAccountCommandHandlerTests : IDisposable
         account.Should().NotBeNull();
         account.FirstName.Should().Be(command.FirstName);
         account.LastName.Should().Be(command.LastName);
-        account.Currency.Should().Be(command.Currency);
+        account.Currency.Should().Be(command.InitialDeposit.Currency);
     }
 
     [Fact]
@@ -68,8 +69,8 @@ public class CreateAccountCommandHandlerTests : IDisposable
         await _sut.HandleAsync(command, CancellationToken.None);
 
         var account = await _context.Accounts.FirstOrDefaultAsync();
-        account?.Balance.Amount.Should().Be(command.InitialDeposit);
-        account?.Balance.Currency.Should().Be(command.Currency);
+        account?.Balance.Amount.Should().Be(command.InitialDeposit.Amount);
+        account?.Balance.Currency.Should().Be(command.InitialDeposit.Currency);
     }
 
     [Fact]
@@ -104,14 +105,14 @@ public class CreateAccountCommandHandlerTests : IDisposable
         var transaction = await _context.Transactions.FirstOrDefaultAsync();
         transaction.Should().NotBeNull();
         transaction.Type.Should().Be(TransactionType.Credit);
-        transaction.Amount.Amount.Should().Be(command.InitialDeposit);
+        transaction.Amount.Amount.Should().Be(command.InitialDeposit.Amount);
         transaction.Description.Should().Be("Initial deposit");
     }
 
     [Fact]
     public async Task HandleAsync_WithZeroInitialDeposit_DoesNotCreateTransaction()
     {
-        var command = new CreateAccountCommand("Ratko", "Prazic", 0m, Currency.EUR);
+        var command = new CreateAccountCommand("Ratko", "Prazic", new Money(0m, Currency.EUR));
 
         await _sut.HandleAsync(command, CancellationToken.None);
 
@@ -120,5 +121,5 @@ public class CreateAccountCommandHandlerTests : IDisposable
     }
 
     private static CreateAccountCommand ValidCommand() =>
-        new("Ratko", "Prazic", 1000m, Currency.EUR);
+        new("Ratko", "Prazic", new Money(1000m, Currency.EUR));
 }

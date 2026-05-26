@@ -16,14 +16,14 @@ public class GetAccountBalanceQueryHandler : IQueryHandler<GetAccountBalanceQuer
     {
         var account = await _context.Accounts
             .AsNoTracking()
-            .Select(a => new { a.AccountId, a.Balance, a.Currency })
+            .Select(a => new { a.AccountId, a.Balance })
             .FirstOrDefaultAsync(a => a.AccountId == query.AccountId, ct);
 
         return account switch
         {
             null => Result<AccountBalanceDto>.Failure("Account not found."),
-            _ => Result<AccountBalanceDto>.Success(new AccountBalanceDto(account.AccountId, account.Balance.Amount,
-                account.Currency))
+            _ => Result<AccountBalanceDto>.Success(new AccountBalanceDto(account.AccountId,
+                new MoneyDto(account.Balance.Amount, account.Balance.Currency)))
         };
     }
 }

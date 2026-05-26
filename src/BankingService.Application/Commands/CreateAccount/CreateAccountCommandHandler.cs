@@ -2,7 +2,6 @@ using BankingService.Application.Common;
 using BankingService.Application.CQRS;
 using BankingService.Domain.Entities;
 using BankingService.Domain.Enums;
-using BankingService.Domain.ValueObjects;
 using BankingService.Infrastructure.Persistence;
 using BankingService.Infrastructure.Services;
 
@@ -30,8 +29,8 @@ public class CreateAccountCommandHandler : ICommandHandler<CreateAccountCommand,
             FirstName = command.FirstName,
             LastName = command.LastName,
             Iban = _ibanGenerator.Generate(),
-            Currency = command.Currency,
-            Balance = new Money(command.InitialDeposit, command.Currency),
+            Currency = command.InitialDeposit.Currency,
+            Balance = command.InitialDeposit,
             IsActive = true,
             CreatedAt = now,
             UpdatedAt = now
@@ -46,7 +45,7 @@ public class CreateAccountCommandHandler : ICommandHandler<CreateAccountCommand,
                 TransactionId = Guid.NewGuid(),
                 AccountId = account.AccountId,
                 Type = TransactionType.Credit,
-                Amount = new Money(command.InitialDeposit, command.Currency),
+                Amount = command.InitialDeposit,
                 Description = "Initial deposit",
                 CreatedAt = now
             });

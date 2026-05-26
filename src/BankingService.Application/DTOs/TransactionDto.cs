@@ -5,8 +5,7 @@ namespace BankingService.Application.DTOs;
 public record TransactionDto(
     Guid TransactionId,
     TransactionType Type,
-    decimal Amount,
-    Currency Currency,
+    MoneyDto Amount,
     Guid? RelatedAccountId,
     string? Description,
     DateTime CreatedAt

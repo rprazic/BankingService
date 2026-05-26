@@ -46,13 +46,13 @@ public class GetAccountDetailsQueryHandlerTests : IDisposable
         var result = await _sut.HandleAsync(new GetAccountDetailsQuery(account.AccountId), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value!.AccountId.Should().Be(account.AccountId);
-        result.Value.FirstName.Should().Be(account.FirstName);
-        result.Value.LastName.Should().Be(account.LastName);
-        result.Value.Iban.Should().Be(account.Iban);
-        result.Value.Currency.Should().Be(account.Currency);
-        result.Value.Balance.Should().Be(account.Balance.Amount);
-        result.Value.CreatedAt.Should().Be(account.CreatedAt);
+        result.Value?.AccountId.Should().Be(account.AccountId);
+        result.Value?.FirstName.Should().Be(account.FirstName);
+        result.Value?.LastName.Should().Be(account.LastName);
+        result.Value?.Iban.Should().Be(account.Iban);
+        result.Value?.Balance.Amount.Should().Be(account.Balance.Amount);
+        result.Value?.Balance.Currency.Should().Be(account.Balance.Currency);
+        result.Value?.CreatedAt.Should().Be(account.CreatedAt);
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public class GetAccountDetailsQueryHandlerTests : IDisposable
         var result = await _sut.HandleAsync(new GetAccountDetailsQuery(account.AccountId), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value!.AccountId.Should().Be(account.AccountId);
+        result.Value?.AccountId.Should().Be(account.AccountId);
     }
 
     private static Account CreateAccount(bool isActive = true) => new()

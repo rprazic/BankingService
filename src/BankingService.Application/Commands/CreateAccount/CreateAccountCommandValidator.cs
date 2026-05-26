@@ -14,10 +14,10 @@ public class CreateAccountCommandValidator : AbstractValidator<CreateAccountComm
             .NotEmpty().WithMessage("Last name is required.")
             .MaximumLength(100).WithMessage("Last name must not exceed 100 characters.");
 
-        RuleFor(x => x.InitialDeposit)
+        RuleFor(x => x.InitialDeposit.Amount)
             .GreaterThanOrEqualTo(0).WithMessage("Initial deposit must be greater than or equal to zero.");
 
-        RuleFor(x => x.Currency)
+        RuleFor(x => x.InitialDeposit.Currency)
             .IsInEnum().WithMessage("Currency is not supported.");
     }
 }

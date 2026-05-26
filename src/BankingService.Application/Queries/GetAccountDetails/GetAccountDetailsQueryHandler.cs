@@ -22,7 +22,7 @@ public class GetAccountDetailsQueryHandler : IQueryHandler<GetAccountDetailsQuer
         {
             null => Result<AccountDto>.Failure("Account not found."),
             _ => Result<AccountDto>.Success(new AccountDto(account.AccountId, account.FirstName, account.LastName,
-                account.Iban, account.Currency, account.Balance.Amount, account.CreatedAt))
+                account.Iban, new MoneyDto(account.Balance.Amount, account.Balance.Currency), account.CreatedAt))
         };
     }
 }
