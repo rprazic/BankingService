@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using BankingService.Application.Locking;
 
 namespace BankingService.Infrastructure.Locking;
 

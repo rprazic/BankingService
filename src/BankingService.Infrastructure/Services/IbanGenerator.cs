@@ -1,4 +1,3 @@
-using BankingService.Application.Services;
 using System.Numerics;
 
 namespace BankingService.Infrastructure.Services;

@@ -1,4 +1,4 @@
-namespace BankingService.Application.Locking;
+namespace BankingService.Infrastructure.Locking;
 
 public interface IAccountLockService
 {
