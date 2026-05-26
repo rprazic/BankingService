@@ -26,5 +26,6 @@ app.MapScalarApiReference(options =>
 app.MapHealthChecks("/health");
 
 app.MapAccountEndpoints();
+app.MapTransactionEndpoints();
 
 app.Run();

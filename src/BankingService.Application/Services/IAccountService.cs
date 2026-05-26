@@ -1,5 +1,7 @@
 using BankingService.Application.Commands.CreateAccount;
 using BankingService.Application.Common;
+using BankingService.Application.DTOs;
+using BankingService.Application.Queries.GetAccountTransactions;
 
 namespace BankingService.Application;
 
@@ -22,6 +24,5 @@ public interface IAccountService
     // TODO: unlock - GetAccountBalance
     // Task<Result<AccountBalanceDto>> GetAccountBalanceAsync(GetAccountBalanceQuery query, CancellationToken ct);
 
-    // TODO: unlock - GetAccountTransactions
-    // Task<Result<PagedResult<TransactionDto>>> GetAccountTransactionsAsync(GetAccountTransactionsQuery query, CancellationToken ct);
+    Task<Result<PagedResult<TransactionDto>>> GetAccountTransactionsAsync(GetAccountTransactionsQuery query, CancellationToken ct);
 }
