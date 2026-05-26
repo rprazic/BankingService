@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build)",
+      "Bash(dotnet test*)",
+      "Bash(dotnet run*)",
+      "Bash(dotnet add package*)",
+      "Bash(dotnet ef migrations*)",
+      "Read(**)",
+      "Write(src/**)",
+      "Write(tests/**)",
+      "Write(docs/**)"
+    ],
+    "deny": [
+      "Bash(rm -rf*)",
+      "Bash(git push*)",
+      "Bash(git commit*)"
+    ]
+  }
+}
