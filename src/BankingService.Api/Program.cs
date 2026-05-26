@@ -1,4 +1,5 @@
 using BankingService.Application;
+using BankingService.Api.Endpoints;
 using BankingService.Api.Extensions;
 using BankingService.Api.Middleware;
 using Scalar.AspNetCore;
@@ -24,7 +25,6 @@ app.MapScalarApiReference(options =>
 
 app.MapHealthChecks("/health");
 
-// TODO: Account endpoints registered here as features are unlocked
-// app.MapAccountEndpoints();
+app.MapAccountEndpoints();
 
 app.Run();

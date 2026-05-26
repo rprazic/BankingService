@@ -1,0 +1,41 @@
+using BankingService.Application;
+using BankingService.Application.Commands.CreateAccount;
+using BankingService.Application.Common;
+using BankingService.Api.Middleware;
+using BankingService.Domain.Enums;
+using Microsoft.AspNetCore.Mvc;
+
+namespace BankingService.Api.Endpoints;
+
+public static class AccountEndpoints
+{
+    public static IEndpointRouteBuilder MapAccountEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/api/v1/accounts")
+            .WithTags("Accounts");
+
+        group.MapPost("/", CreateAccount)
+            .WithSummary("Create account")
+            .WithDescription("Opens a new bank account with an initial deposit.");
+
+        return app;
+    }
+
+    private static async Task<IResult> CreateAccount([FromBody] CreateAccountRequest request,
+        IAccountService accountService, CancellationToken ct)
+    {
+        var command = new CreateAccountCommand(request.FirstName, request.LastName, request.InitialDeposit,
+            request.Currency);
+        var result = await accountService.CreateAccountAsync(command, ct);
+
+        return result.IsSuccess
+            ? Results.Created($"/api/v1/accounts/{result.Value}", new { AccountId = result.Value })
+            : Results.UnprocessableEntity(new ErrorResponse(result.Errors));
+    }
+
+    private sealed record CreateAccountRequest(
+        string FirstName,
+        string LastName,
+        decimal InitialDeposit,
+        Currency Currency);
+}
