@@ -1,39 +1,19 @@
 using BankingService.Application.Commands.CreateAccount;
 using BankingService.Domain.Enums;
 using BankingService.Domain.ValueObjects;
-using BankingService.Infrastructure.Persistence;
 using BankingService.Infrastructure.Services;
 using FluentAssertions;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankingService.Unit.Tests.Commands;
 
-public class CreateAccountCommandHandlerTests : IDisposable
+public class CreateAccountCommandHandlerTests : BankingDbContextTestBase
 {
-    private readonly SqliteConnection _connection;
-    private readonly BankingDbContext _context;
     private readonly CreateAccountCommandHandler _sut;
 
     public CreateAccountCommandHandlerTests()
     {
-        _connection = new SqliteConnection("Data Source=:memory:");
-        _connection.Open();
-
-        var options = new DbContextOptionsBuilder<BankingDbContext>()
-            .UseSqlite(_connection)
-            .Options;
-
-        _context = new BankingDbContext(options);
-        _context.Database.EnsureCreated();
-
-        _sut = new CreateAccountCommandHandler(_context, new IbanGenerator());
-    }
-
-    public void Dispose()
-    {
-        _context.Dispose();
-        _connection.Dispose();
+        _sut = new CreateAccountCommandHandler(Context, new IbanGenerator());
     }
 
     [Fact]
@@ -54,7 +34,7 @@ public class CreateAccountCommandHandlerTests : IDisposable
 
         await _sut.HandleAsync(command, CancellationToken.None);
 
-        var account = await _context.Accounts.FirstOrDefaultAsync();
+        var account = await Context.Accounts.FirstOrDefaultAsync();
         account.Should().NotBeNull();
         account.FirstName.Should().Be(command.FirstName);
         account.LastName.Should().Be(command.LastName);
@@ -68,7 +48,7 @@ public class CreateAccountCommandHandlerTests : IDisposable
 
         await _sut.HandleAsync(command, CancellationToken.None);
 
-        var account = await _context.Accounts.FirstOrDefaultAsync();
+        var account = await Context.Accounts.FirstOrDefaultAsync();
         account?.Balance.Amount.Should().Be(command.InitialDeposit.Amount);
         account?.Balance.Currency.Should().Be(command.InitialDeposit.Currency);
     }
@@ -80,7 +60,7 @@ public class CreateAccountCommandHandlerTests : IDisposable
 
         await _sut.HandleAsync(command, CancellationToken.None);
 
-        var account = await _context.Accounts.FirstOrDefaultAsync();
+        var account = await Context.Accounts.FirstOrDefaultAsync();
         account?.IsActive.Should().BeTrue();
     }
 
@@ -91,7 +71,7 @@ public class CreateAccountCommandHandlerTests : IDisposable
 
         await _sut.HandleAsync(command, CancellationToken.None);
 
-        var account = await _context.Accounts.FirstOrDefaultAsync();
+        var account = await Context.Accounts.FirstOrDefaultAsync();
         account?.Iban.Should().NotBeNullOrWhiteSpace();
     }
 
@@ -102,7 +82,7 @@ public class CreateAccountCommandHandlerTests : IDisposable
 
         await _sut.HandleAsync(command, CancellationToken.None);
 
-        var transaction = await _context.Transactions.FirstOrDefaultAsync();
+        var transaction = await Context.Transactions.FirstOrDefaultAsync();
         transaction.Should().NotBeNull();
         transaction.Type.Should().Be(TransactionType.Credit);
         transaction.Amount.Amount.Should().Be(command.InitialDeposit.Amount);
@@ -116,7 +96,7 @@ public class CreateAccountCommandHandlerTests : IDisposable
 
         await _sut.HandleAsync(command, CancellationToken.None);
 
-        var count = await _context.Transactions.CountAsync();
+        var count = await Context.Transactions.CountAsync();
         count.Should().Be(0);
     }
 
