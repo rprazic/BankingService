@@ -10,7 +10,9 @@ LastName     : string        — required, max 100 chars
 Iban         : string        — auto-generated on creation, unique, immutable
 Currency     : Currency      — set on creation, immutable
 Balance      : Money         — current balance, updated on every transaction
+IsActive     : bool          — true by default; set to false on freeze/close
 CreatedAt    : DateTime      — UTC, set on creation, immutable
+UpdatedAt    : DateTime      — UTC, updated on every mutating operation
 ```
 
 `Balance.Currency` always equals `Account.Currency`. This invariant is enforced at creation and on every operation.
@@ -115,4 +117,4 @@ Algorithm (MOD97):
 5. Zero-pad `checkDigits` to 2 digits
 6. Return `"RS" + checkDigits + BBAN`
 
-`IIbanGenerator` interface lives in Application. `IbanGenerator` implementation lives in Infrastructure.
+`IIbanGenerator` interface lives in `BankingService.Infrastructure.Services`. `IbanGenerator` implementation is in the same namespace. Both are accessible from Application (Application → Infrastructure).

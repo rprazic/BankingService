@@ -16,32 +16,39 @@
 
 ## Unit Test Setup
 
-Each handler test class creates its own in-memory SQLite database:
+Each handler test class owns a `SqliteConnection` that stays open for the lifetime of the test. This is required because SQLite in-memory databases are connection-scoped — closing and reopening the connection creates an empty database, discarding the schema created by `EnsureCreated()`.
 
 ```csharp
 public class CreateAccountCommandHandlerTests : IDisposable
 {
+    private readonly SqliteConnection _connection;
     private readonly BankingDbContext _context;
     private readonly CreateAccountCommandHandler _sut;
 
     public CreateAccountCommandHandlerTests()
     {
+        _connection = new SqliteConnection("Data Source=:memory:");
+        _connection.Open();
+
         var options = new DbContextOptionsBuilder<BankingDbContext>()
-            .UseSqlite("Data Source=:memory:")
+            .UseSqlite(_connection)
             .Options;
 
         _context = new BankingDbContext(options);
         _context.Database.EnsureCreated();
 
-        var ibanGenerator = new IbanGenerator();
-        _sut = new CreateAccountCommandHandler(_context, ibanGenerator);
+        _sut = new CreateAccountCommandHandler(_context, new IbanGenerator());
     }
 
-    public void Dispose() => _context.Dispose();
+    public void Dispose()
+    {
+        _context.Dispose();
+        _connection.Dispose();
+    }
 }
 ```
 
-**Note:** Use `EnsureCreated()` (not `Migrate()`) for unit tests — faster and sufficient.
+**Note:** Use `EnsureCreated()` (not `Migrate()`) for unit tests — faster and sufficient. Pass the open `SqliteConnection` to `UseSqlite()`, never just the connection string.
 
 ## Integration Test Setup
 
@@ -60,7 +67,7 @@ public class AccountServiceIntegrationTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         var services = new ServiceCollection();
-        services.AddInfrastructure(new ConfigurationBuilder()
+        services.AddApplication(new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:DefaultConnection"] = $"Data Source={_dbPath}"

@@ -27,11 +27,12 @@ src/
 │   │   ├── ICommandHandler.cs
 │   │   ├── ICommandDispatcher.cs
 │   │   ├── CommandDispatcher.cs
-│   │   ├── ValidationCommandHandlerDecorator.cs
 │   │   ├── IQuery.cs
 │   │   ├── IQueryHandler.cs
 │   │   ├── IQueryDispatcher.cs
 │   │   └── QueryDispatcher.cs
+│   ├── Behaviours/
+│   │   └── ValidationCommandHandlerDecorator.cs
 │   ├── Commands/
 │   │   ├── CreateAccount/
 │   │   │   ├── CreateAccountCommand.cs
@@ -48,10 +49,8 @@ src/
 │   │   ├── AccountDto.cs
 │   │   ├── AccountBalanceDto.cs
 │   │   └── TransactionDto.cs
-│   ├── Locking/
-│   │   └── IAccountLockService.cs
-│   ├── Services/
-│   │   └── IIbanGenerator.cs
+│   ├── AccountService.cs
+│   ├── DependencyInjection.cs
 │   └── IAccountService.cs
 │
 ├── BankingService.Infrastructure/
@@ -62,8 +61,10 @@ src/
 │   │   │   └── TransactionConfiguration.cs
 │   │   └── Migrations/
 │   ├── Locking/
+│   │   ├── IAccountLockService.cs        ← canonical interface definition
 │   │   └── AccountLockService.cs
 │   ├── Services/
+│   │   ├── IIbanGenerator.cs             ← canonical interface definition
 │   │   └── IbanGenerator.cs
 │   └── DependencyInjection.cs
 │
@@ -80,15 +81,13 @@ src/
 ## Dependency Rules
 
 ```
-Api  ──────────────────► Application ◄──────── Infrastructure
- │                            │
- └──────────────────► Domain ◄┘
+Domain ──────► Infrastructure ──────► Application ──────► Api
 ```
 
 - **Domain**: zero dependencies on other projects
-- **Application**: depends on Domain only
-- **Infrastructure**: depends on Application and Domain
-- **Api**: depends on Application only (Infrastructure referenced only for DI registration in Program.cs)
+- **Infrastructure**: depends on Domain only — persistence, locking, IBAN generation
+- **Application**: depends on Infrastructure (and transitively Domain) — CQRS handlers, validators, facade, DI wiring
+- **Api**: depends on Application only (Infrastructure is transitive)
 
 ## Locking Strategy
 
@@ -145,22 +144,25 @@ builder.OwnsOne(a => a.Balance, money =>
 
 ## DI Registration
 
-Infrastructure exposes a single extension method called from `Program.cs`:
+Application exposes `AddApplication` — the single call from `Program.cs`:
 ```csharp
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApplication(builder.Configuration);
 ```
 
-Inside `AddInfrastructure`:
-1. Register `BankingDbContext` with SQLite connection string from configuration
+`AddApplication` (in `Application/DependencyInjection.cs`) owns all registration and calls `AddInfrastructure` internally:
+1. Calls `AddInfrastructure` → registers `BankingDbContext` with SQLite connection string
 2. Register `IAccountLockService` → `AccountLockService` as singleton
 3. Register `IIbanGenerator` → `IbanGenerator` as singleton
-4. Scrutor scan Application assembly for `ICommandHandler<,>` and `IQueryHandler<,>` → scoped
-5. Scrutor decorate all `ICommandHandler<,>` with `ValidationCommandHandlerDecorator<,>`
-6. FluentValidation: scan Application assembly for all validators
+4. Register `ICommandDispatcher` → `CommandDispatcher` as scoped
+5. Register `IQueryDispatcher` → `QueryDispatcher` as scoped
+6. Scrutor scan Application assembly for `ICommandHandler<,>` and `IQueryHandler<,>` → scoped
+7. Scrutor decorate all `ICommandHandler<,>` with `ValidationCommandHandlerDecorator<,>`
+8. FluentValidation: scan Application assembly for all validators
+9. Register `IAccountService` → `AccountService` as scoped
 
 ```csharp
 services.Scan(selector => selector
-    .FromAssemblyOf<IAccountService>()
+    .FromAssemblyOf<ICommandDispatcher>()
     .AddClasses(f => f.AssignableToAny(typeof(ICommandHandler<,>), typeof(IQueryHandler<,>)))
     .AsImplementedInterfaces()
     .WithScopedLifetime());
@@ -174,8 +176,11 @@ if (services.Any(s => s.ServiceType.IsGenericType &&
     services.Decorate(typeof(ICommandHandler<,>), typeof(ValidationCommandHandlerDecorator<,>));
 }
 
-services.AddValidatorsFromAssemblyContaining<IAccountService>();
+services.AddValidatorsFromAssemblyContaining<ICommandDispatcher>();
+services.AddScoped<IAccountService, AccountService>();
 ```
+
+`Infrastructure/DependencyInjection.cs` (`AddInfrastructure`) only registers `BankingDbContext` — nothing else.
 
 ## Tech Stack
 

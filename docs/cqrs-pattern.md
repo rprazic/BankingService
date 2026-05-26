@@ -187,17 +187,19 @@ public class CreateAccountCommandHandler : ICommandHandler<CreateAccountCommand,
     public async Task<Result<Guid>> HandleAsync(
         CreateAccountCommand command, CancellationToken ct, bool saveChanges = true)
     {
-        var iban = _ibanGenerator.Generate();
+        var now = DateTime.UtcNow;
 
         var account = new Account
         {
             AccountId = Guid.NewGuid(),
             FirstName = command.FirstName,
             LastName = command.LastName,
-            Iban = iban,
+            Iban = _ibanGenerator.Generate(),
             Currency = command.Currency,
             Balance = new Money(command.InitialDeposit, command.Currency),
-            CreatedAt = DateTime.UtcNow
+            IsActive = true,
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
         var transaction = new Transaction
@@ -209,7 +211,7 @@ public class CreateAccountCommandHandler : ICommandHandler<CreateAccountCommand,
             Description = "Initial deposit",
             CreatedAt = DateTime.UtcNow
         };
-
+        
         _context.Accounts.Add(account);
         _context.Transactions.Add(transaction);
 
@@ -245,9 +247,7 @@ public class AccountService : IAccountService
     private readonly IQueryDispatcher _queryDispatcher;
     private readonly IAccountLockService _lockService;
 
-    public AccountService(
-        ICommandDispatcher commandDispatcher,
-        IQueryDispatcher queryDispatcher,
+    public AccountService(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher,
         IAccountLockService lockService)
     {
         _commandDispatcher = commandDispatcher;
