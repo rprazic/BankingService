@@ -8,8 +8,7 @@ public class BankingDbContext : DbContext
     public BankingDbContext(DbContextOptions<BankingDbContext> options) : base(options) { }
 
     public DbSet<Account> Accounts => Set<Account>();
-
-    // TODO: DbSet<Transaction> Transactions added when Transaction entity is implemented
+    public DbSet<Transaction> Transactions => Set<Transaction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
