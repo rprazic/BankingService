@@ -13,7 +13,7 @@ public class CreateAccountCommandHandlerTests : BankingDbContextTestBase
 
     public CreateAccountCommandHandlerTests()
     {
-        _sut = new CreateAccountCommandHandler(Context, new IbanGenerator());
+        _sut = new CreateAccountCommandHandler(Context, new IbanGenerator(), CreateDispatcher());
     }
 
     [Fact]

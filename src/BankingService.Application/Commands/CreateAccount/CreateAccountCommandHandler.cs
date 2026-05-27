@@ -1,3 +1,4 @@
+using BankingService.Application.Commands.CreateTransaction;
 using BankingService.Application.Common;
 using BankingService.Application.CQRS;
 using BankingService.Domain.Entities;
@@ -11,11 +12,14 @@ public class CreateAccountCommandHandler : ICommandHandler<CreateAccountCommand,
 {
     private readonly BankingDbContext _context;
     private readonly IIbanGenerator _ibanGenerator;
+    private readonly ICommandDispatcher _dispatcher;
 
-    public CreateAccountCommandHandler(BankingDbContext context, IIbanGenerator ibanGenerator)
+    public CreateAccountCommandHandler(BankingDbContext context, IIbanGenerator ibanGenerator,
+        ICommandDispatcher dispatcher)
     {
         _context = context;
         _ibanGenerator = ibanGenerator;
+        _dispatcher = dispatcher;
     }
 
     public async Task<Result<Guid>> HandleAsync(CreateAccountCommand command, CancellationToken ct,
@@ -40,15 +44,10 @@ public class CreateAccountCommandHandler : ICommandHandler<CreateAccountCommand,
 
         if (command.InitialDeposit > 0)
         {
-            _context.Transactions.Add(new Transaction
-            {
-                TransactionId = Guid.NewGuid(),
-                AccountId = account.AccountId,
-                Type = TransactionType.Credit,
-                Amount = command.InitialDeposit,
-                Description = "Initial deposit",
-                CreatedAt = now
-            });
+            await _dispatcher.DispatchAsync<CreateTransactionCommand, Result<Guid>>(
+                new CreateTransactionCommand(account.AccountId, TransactionType.Credit, command.InitialDeposit, now,
+                    "Initial deposit"),
+                ct, saveChanges: false);
         }
 
         if (saveChanges)

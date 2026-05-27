@@ -1,7 +1,7 @@
+using BankingService.Application.Commands.CreateTransaction;
 using BankingService.Application.Common;
 using BankingService.Application.CQRS;
 using BankingService.Application.DTOs;
-using BankingService.Domain.Entities;
 using BankingService.Domain.Enums;
 using BankingService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -11,13 +11,16 @@ namespace BankingService.Application.Commands.Deposit;
 public class DepositCommandHandler : ICommandHandler<DepositCommand, Result<MoneyDto>>
 {
     private readonly BankingDbContext _context;
+    private readonly ICommandDispatcher _dispatcher;
 
-    public DepositCommandHandler(BankingDbContext context)
+    public DepositCommandHandler(BankingDbContext context, ICommandDispatcher dispatcher)
     {
         _context = context;
+        _dispatcher = dispatcher;
     }
 
-    public async Task<Result<MoneyDto>> HandleAsync(DepositCommand command, CancellationToken ct, bool saveChanges = true)
+    public async Task<Result<MoneyDto>> HandleAsync(DepositCommand command, CancellationToken ct,
+        bool saveChanges = true)
     {
         var account = await _context.Accounts
             .FirstOrDefaultAsync(a => a.AccountId == command.AccountId, ct);
@@ -41,15 +44,9 @@ public class DepositCommandHandler : ICommandHandler<DepositCommand, Result<Mone
         account.Balance += command.Amount;
         account.UpdatedAt = now;
 
-        _context.Transactions.Add(new Transaction
-        {
-            TransactionId = Guid.NewGuid(),
-            AccountId = account.AccountId,
-            Type = TransactionType.Credit,
-            Amount = command.Amount,
-            Description = "Deposit",
-            CreatedAt = now
-        });
+        await _dispatcher.DispatchAsync<CreateTransactionCommand, Result<Guid>>(
+            new CreateTransactionCommand(account.AccountId, TransactionType.Credit, command.Amount, now, "Deposit"),
+            ct, saveChanges: false);
 
         if (saveChanges)
         {

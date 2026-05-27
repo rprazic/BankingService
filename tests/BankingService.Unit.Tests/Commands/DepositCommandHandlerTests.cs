@@ -13,7 +13,7 @@ public class DepositCommandHandlerTests : BankingDbContextTestBase
 
     public DepositCommandHandlerTests()
     {
-        _sut = new DepositCommandHandler(Context);
+        _sut = new DepositCommandHandler(Context, CreateDispatcher());
     }
 
     [Fact]

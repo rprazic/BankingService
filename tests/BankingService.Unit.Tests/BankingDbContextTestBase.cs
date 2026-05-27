@@ -1,9 +1,13 @@
+using BankingService.Application.Commands.CreateTransaction;
+using BankingService.Application.Common;
+using BankingService.Application.CQRS;
 using BankingService.Domain.Entities;
 using BankingService.Domain.Enums;
 using BankingService.Domain.ValueObjects;
 using BankingService.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BankingService.Unit.Tests;
 
@@ -30,6 +34,15 @@ public abstract class BankingDbContextTestBase : IDisposable
     {
         Context.Dispose();
         _connection.Dispose();
+    }
+
+    protected ICommandDispatcher CreateDispatcher()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton(Context);
+        services.AddScoped<ICommandHandler<CreateTransactionCommand, Result<Guid>>, CreateTransactionCommandHandler>();
+        services.AddScoped<ICommandDispatcher, CommandDispatcher>();
+        return services.BuildServiceProvider().GetRequiredService<ICommandDispatcher>();
     }
 
     protected static Account CreateAccount(decimal balance = 1000m, bool isActive = true, string firstName = "Test",
