@@ -131,7 +131,28 @@
 
 ---
 
-## ADR-009: TimeProvider injection over DateTime.UtcNow
+## ADR-009: No idempotency mechanism — known gap, extension path documented
+
+**Context:** In production banking, the same deposit or withdrawal request can be delivered more than once — due to network retries, client timeouts, or message redelivery. Without idempotency protection, each delivery creates a separate transaction and mutates the balance again.
+
+**Decision:** No idempotency mechanism is implemented. Duplicate requests will each be processed as independent operations.
+
+**Reasons:**
+- Time constraints made a correct implementation out of scope for this iteration
+- A half-correct implementation (e.g. deduplicating only at the HTTP layer) would give false confidence without protecting against retries that originate below the API
+
+**Extension path — idempotency key on the Transaction entity:**
+1. Add `IdempotencyKey` (`string?`) to the `Transaction` entity and add a unique index on it in EF Core configuration
+2. Add `IdempotencyKey` (`string?`) to `DepositCommand`, `WithdrawCommand`, and `TransferCommand`; pass it through to `CreateTransactionCommand`
+3. In each handler, if an `IdempotencyKey` is provided, query `_context.Transactions` for an existing record with that key before mutating state — if found, return the stored balance as the result immediately
+4. The unique index provides a database-level safety net against races: a concurrent duplicate that slips past the pre-check will fail with a unique constraint violation rather than double-applying
+5. `CreateAccount` is not covered by this mechanism — it produces no transaction for the account record itself; idempotency there would require a separate approach (e.g. unique index on IBAN)
+
+**Consequence:** Until the extension is built, callers are responsible for not retrying on ambiguous responses (e.g. timeout on a 200).
+
+---
+
+## ADR-010: TimeProvider injection over DateTime.UtcNow
 
 **Context:** Handlers that record timestamps (`CreateAccount`, `Deposit`, `Withdraw`) were calling `DateTime.UtcNow` directly, making the timestamp untestable and the handlers non-deterministic under test.
 
