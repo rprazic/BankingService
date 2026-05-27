@@ -24,7 +24,8 @@ public class DepositCommandHandlerTests : BankingDbContextTestBase
         Context.Accounts.Add(account);
         await Context.SaveChangesAsync();
 
-        var result = await _sut.HandleAsync(new DepositCommand(account.AccountId, new Money(300m, Currency.EUR)), CancellationToken.None);
+        var result = await _sut.HandleAsync(new DepositCommand(account.AccountId, new Money(300m, Currency.EUR)),
+            CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
     }
@@ -36,10 +37,11 @@ public class DepositCommandHandlerTests : BankingDbContextTestBase
         Context.Accounts.Add(account);
         await Context.SaveChangesAsync();
 
-        var result = await _sut.HandleAsync(new DepositCommand(account.AccountId, new Money(300m, Currency.EUR)), CancellationToken.None);
+        var result = await _sut.HandleAsync(new DepositCommand(account.AccountId, new Money(300m, Currency.EUR)),
+            CancellationToken.None);
 
-        result.Value!.Amount.Should().Be(800m);
-        result.Value.Currency.Should().Be(Currency.EUR);
+        result.Value?.Amount.Should().Be(800m);
+        result.Value?.Currency.Should().Be(Currency.EUR);
     }
 
     [Fact]
@@ -49,10 +51,11 @@ public class DepositCommandHandlerTests : BankingDbContextTestBase
         Context.Accounts.Add(account);
         await Context.SaveChangesAsync();
 
-        await _sut.HandleAsync(new DepositCommand(account.AccountId, new Money(300m, Currency.EUR)), CancellationToken.None);
+        await _sut.HandleAsync(new DepositCommand(account.AccountId, new Money(300m, Currency.EUR)),
+            CancellationToken.None);
 
         var updated = await Context.Accounts.FindAsync(account.AccountId);
-        updated!.Balance.Amount.Should().Be(800m);
+        updated?.Balance.Amount.Should().Be(800m);
     }
 
     [Fact]
@@ -62,11 +65,12 @@ public class DepositCommandHandlerTests : BankingDbContextTestBase
         Context.Accounts.Add(account);
         await Context.SaveChangesAsync();
 
-        await _sut.HandleAsync(new DepositCommand(account.AccountId, new Money(300m, Currency.EUR)), CancellationToken.None);
+        await _sut.HandleAsync(new DepositCommand(account.AccountId, new Money(300m, Currency.EUR)),
+            CancellationToken.None);
 
         var transaction = await Context.Transactions.FirstOrDefaultAsync();
         transaction.Should().NotBeNull();
-        transaction!.AccountId.Should().Be(account.AccountId);
+        transaction.AccountId.Should().Be(account.AccountId);
         transaction.Type.Should().Be(TransactionType.Credit);
         transaction.Amount.Amount.Should().Be(300m);
         transaction.Description.Should().Be("Deposit");
@@ -75,7 +79,8 @@ public class DepositCommandHandlerTests : BankingDbContextTestBase
     [Fact]
     public async Task HandleAsync_AccountNotFound_ReturnsFailure()
     {
-        var result = await _sut.HandleAsync(new DepositCommand(Guid.NewGuid(), new Money(300m, Currency.EUR)), CancellationToken.None);
+        var result = await _sut.HandleAsync(new DepositCommand(Guid.NewGuid(), new Money(300m, Currency.EUR)),
+            CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().Contain("Account not found.");
@@ -88,7 +93,8 @@ public class DepositCommandHandlerTests : BankingDbContextTestBase
         Context.Accounts.Add(account);
         await Context.SaveChangesAsync();
 
-        var result = await _sut.HandleAsync(new DepositCommand(account.AccountId, new Money(300m, Currency.EUR)), CancellationToken.None);
+        var result = await _sut.HandleAsync(new DepositCommand(account.AccountId, new Money(300m, Currency.EUR)),
+            CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().Contain("Account is not active.");
@@ -101,7 +107,8 @@ public class DepositCommandHandlerTests : BankingDbContextTestBase
         Context.Accounts.Add(account);
         await Context.SaveChangesAsync();
 
-        var result = await _sut.HandleAsync(new DepositCommand(account.AccountId, new Money(300m, Currency.USD)), CancellationToken.None);
+        var result = await _sut.HandleAsync(new DepositCommand(account.AccountId, new Money(300m, Currency.USD)),
+            CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().Contain("Deposit currency does not match account currency.");

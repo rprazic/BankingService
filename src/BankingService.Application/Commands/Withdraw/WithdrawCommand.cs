@@ -8,5 +8,6 @@ namespace BankingService.Application.Commands.Withdraw;
 public record WithdrawCommand(
     Guid AccountId,
     Money Amount,
-    string? Description = null
+    string? Description = null,
+    Guid? RelatedAccountId = null
 ) : ICommand<Result<MoneyDto>>;

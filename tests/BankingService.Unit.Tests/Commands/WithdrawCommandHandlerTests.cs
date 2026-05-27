@@ -40,8 +40,8 @@ public class WithdrawCommandHandlerTests : BankingDbContextTestBase
         var result = await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.EUR)),
             CancellationToken.None);
 
-        result.Value!.Amount.Should().Be(300m);
-        result.Value.Currency.Should().Be(Currency.EUR);
+        result.Value?.Amount.Should().Be(300m);
+        result.Value?.Currency.Should().Be(Currency.EUR);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class WithdrawCommandHandlerTests : BankingDbContextTestBase
             CancellationToken.None);
 
         var updated = await Context.Accounts.FindAsync(account.AccountId);
-        updated!.Balance.Amount.Should().Be(300m);
+        updated?.Balance.Amount.Should().Be(300m);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class WithdrawCommandHandlerTests : BankingDbContextTestBase
 
         var transaction = await Context.Transactions.FirstOrDefaultAsync();
         transaction.Should().NotBeNull();
-        transaction!.AccountId.Should().Be(account.AccountId);
+        transaction.AccountId.Should().Be(account.AccountId);
         transaction.Type.Should().Be(TransactionType.Debit);
         transaction.Amount.Amount.Should().Be(200m);
         transaction.Description.Should().Be("Withdrawal");

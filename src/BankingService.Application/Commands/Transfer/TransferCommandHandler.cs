@@ -3,6 +3,7 @@ using BankingService.Application.Commands.Withdraw;
 using BankingService.Application.Common;
 using BankingService.Application.CQRS;
 using BankingService.Application.DTOs;
+using BankingService.Domain.Entities;
 using BankingService.Domain.ValueObjects;
 using BankingService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +33,7 @@ public class TransferCommandHandler : ICommandHandler<TransferCommand, Result>
             .FirstOrDefaultAsync(a => a.AccountId == command.ToAccountId, ct);
 
         if (sourceAccount is not null && destinationAccount is not null
-                                      && sourceAccount.Currency != destinationAccount.Currency)
+            && IsCrossCurrencyTransfer(sourceAccount, destinationAccount))
         {
             _logger.LogWarning(
                 "Transfer failed. FromAccountId: {FromAccountId}, ToAccountId: {ToAccountId}, Reason: Cross-currency transfer ({SourceCurrency} -> {DestinationCurrency})",
@@ -42,7 +43,8 @@ public class TransferCommandHandler : ICommandHandler<TransferCommand, Result>
         }
 
         var withdrawResult = await _dispatcher.DispatchAsync<WithdrawCommand, Result<MoneyDto>>(
-            new WithdrawCommand(command.FromAccountId, new Money(command.Amount), command.Description),
+            new WithdrawCommand(command.FromAccountId, new Money(command.Amount), command.Description,
+                RelatedAccountId: command.ToAccountId),
             ct, saveChanges: false);
         if (!withdrawResult.IsSuccess)
         {
@@ -53,7 +55,8 @@ public class TransferCommandHandler : ICommandHandler<TransferCommand, Result>
         }
 
         var depositResult = await _dispatcher.DispatchAsync<DepositCommand, Result<MoneyDto>>(
-            new DepositCommand(command.ToAccountId, new Money(command.Amount), command.Description),
+            new DepositCommand(command.ToAccountId, new Money(command.Amount), command.Description,
+                RelatedAccountId: command.FromAccountId),
             ct, saveChanges: false);
         if (!depositResult.IsSuccess)
         {
@@ -73,4 +76,7 @@ public class TransferCommandHandler : ICommandHandler<TransferCommand, Result>
             command.FromAccountId, command.ToAccountId, command.Amount.Amount, command.Amount.Currency);
         return Result.Success();
     }
+
+    private static bool IsCrossCurrencyTransfer(Account source, Account destination)
+        => source.Currency != destination.Currency;
 }

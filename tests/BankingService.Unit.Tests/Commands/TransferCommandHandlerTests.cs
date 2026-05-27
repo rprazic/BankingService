@@ -45,7 +45,7 @@ public class TransferCommandHandlerTests : BankingDbContextTestBase
             CancellationToken.None);
 
         var updated = await Context.Accounts.FindAsync(source.AccountId);
-        updated!.Balance.Amount.Should().Be(800m);
+        updated?.Balance.Amount.Should().Be(800m);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class TransferCommandHandlerTests : BankingDbContextTestBase
             CancellationToken.None);
 
         var updated = await Context.Accounts.FindAsync(destination.AccountId);
-        updated!.Balance.Amount.Should().Be(700m);
+        updated?.Balance.Amount.Should().Be(700m);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class TransferCommandHandlerTests : BankingDbContextTestBase
         var debit = await Context.Transactions
             .FirstOrDefaultAsync(t => t.AccountId == source.AccountId);
         debit.Should().NotBeNull();
-        debit!.Type.Should().Be(TransactionType.Debit);
+        debit.Type.Should().Be(TransactionType.Debit);
         debit.Amount.Amount.Should().Be(200m);
     }
 
@@ -98,8 +98,42 @@ public class TransferCommandHandlerTests : BankingDbContextTestBase
         var credit = await Context.Transactions
             .FirstOrDefaultAsync(t => t.AccountId == destination.AccountId);
         credit.Should().NotBeNull();
-        credit!.Type.Should().Be(TransactionType.Credit);
+        credit.Type.Should().Be(TransactionType.Credit);
         credit.Amount.Amount.Should().Be(200m);
+    }
+
+    [Fact]
+    public async Task HandleAsync_ValidTransfer_DebitTransactionHasDestinationAsRelatedAccount()
+    {
+        var source = CreateAccount(balance: 1000m);
+        var destination = CreateAccount(balance: 500m);
+        Context.Accounts.AddRange(source, destination);
+        await Context.SaveChangesAsync();
+
+        await _sut.HandleAsync(
+            new TransferCommand(source.AccountId, destination.AccountId, new Money(200m, Currency.EUR)),
+            CancellationToken.None);
+
+        var debit = await Context.Transactions
+            .FirstOrDefaultAsync(t => t.AccountId == source.AccountId);
+        debit?.RelatedAccountId.Should().Be(destination.AccountId);
+    }
+
+    [Fact]
+    public async Task HandleAsync_ValidTransfer_CreditTransactionHasSourceAsRelatedAccount()
+    {
+        var source = CreateAccount(balance: 1000m);
+        var destination = CreateAccount(balance: 500m);
+        Context.Accounts.AddRange(source, destination);
+        await Context.SaveChangesAsync();
+
+        await _sut.HandleAsync(
+            new TransferCommand(source.AccountId, destination.AccountId, new Money(200m, Currency.EUR)),
+            CancellationToken.None);
+
+        var credit = await Context.Transactions
+            .FirstOrDefaultAsync(t => t.AccountId == destination.AccountId);
+        credit?.RelatedAccountId.Should().Be(source.AccountId);
     }
 
     [Fact]
@@ -209,7 +243,7 @@ public class TransferCommandHandlerTests : BankingDbContextTestBase
             CancellationToken.None);
 
         var updated = await Context.Accounts.FindAsync(source.AccountId);
-        updated!.Balance.Amount.Should().Be(1000m);
+        updated?.Balance.Amount.Should().Be(1000m);
     }
 
     [Fact]

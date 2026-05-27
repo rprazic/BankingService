@@ -63,7 +63,7 @@ public class WithdrawCommandHandler : ICommandHandler<WithdrawCommand, Result<Mo
 
         await _dispatcher.DispatchAsync<CreateTransactionCommand, Result<Guid>>(
             new CreateTransactionCommand(account.AccountId, TransactionType.Debit, command.Amount, now,
-                command.Description ?? "Withdrawal"),
+                command.Description ?? "Withdrawal", command.RelatedAccountId),
             ct, saveChanges: false);
 
         if (saveChanges)
