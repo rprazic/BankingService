@@ -72,4 +72,31 @@ public class MoneyConstructionTests
         result.Amount.Should().Be(500m);
         result.Currency.Should().Be(Currency.EUR);
     }
+
+    [Fact]
+    public void Constructor_NegativeAmount_ThrowsArgumentOutOfRangeException()
+    {
+        var act = () => new Money(-0.01m, Currency.EUR);
+
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .WithParameterName("amount");
+    }
+
+    [Fact]
+    public void Constructor_ZeroAmount_IsAllowed()
+    {
+        var money = new Money(0m, Currency.EUR);
+
+        money.Amount.Should().Be(0m);
+    }
+
+    [Fact]
+    public void ToAmount_NegativeAmount_ThrowsArgumentOutOfRangeException()
+    {
+        var money = new Money(100m, Currency.EUR);
+        var act = () => money.ToAmount(-1m);
+
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .WithParameterName("amount");
+    }
 }

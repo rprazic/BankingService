@@ -71,4 +71,24 @@ public class MoneyScalarArithmeticTests
         result.Amount.Should().Be(25m);
         result.Currency.Should().Be(Currency.EUR);
     }
+
+    [Fact]
+    public void SubtractScalar_MoneyMinusDecimal_ProducesNegativeResult_Throws()
+    {
+        var money = new Money(50m, Currency.EUR);
+        var act = () => { _ = money - 100m; };
+
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .WithParameterName("amount");
+    }
+
+    [Fact]
+    public void SubtractScalar_DecimalMinusMoney_ProducesNegativeResult_Throws()
+    {
+        var money = new Money(100m, Currency.EUR);
+        var act = () => { _ = 30m - money; };
+
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .WithParameterName("amount");
+    }
 }

@@ -7,6 +7,11 @@ public class Money : BaseValueObject
 {
     public Money(decimal amount, Currency currency)
     {
+        if (amount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount), amount, "Money amount cannot be negative.");
+        }
+
         Amount = amount;
         Currency = currency;
     }
