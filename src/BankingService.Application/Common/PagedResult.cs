@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 namespace BankingService.Application.Common;
 
 public sealed class PagedResult<T>
@@ -10,12 +12,25 @@ public sealed class PagedResult<T>
         TotalCount = totalCount;
     }
 
+    [Description("The items on this page.")]
     public IReadOnlyList<T> Items { get; }
+
+    [Description("Current page number (1-based).")]
     public int Page { get; }
+
+    [Description("Number of items requested per page.")]
     public int PageSize { get; }
+
+    [Description("Total number of items across all pages.")]
     public int TotalCount { get; }
+
+    [Description("Total number of pages.")]
     public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+
+    [Description("Whether there is a next page.")]
     public bool HasNextPage => Page < TotalPages;
+
+    [Description("Whether there is a previous page.")]
     public bool HasPreviousPage => Page > 1;
 }
 

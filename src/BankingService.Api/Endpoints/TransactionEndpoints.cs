@@ -1,5 +1,7 @@
 using BankingService.Application.Queries.GetAccountTransactions;
 using BankingService.Api.Middleware;
+using BankingService.Application.Common;
+using BankingService.Application.DTOs;
 using BankingService.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,7 +16,11 @@ public static class TransactionEndpoints
 
         group.MapGet("/", GetTransactions)
             .WithSummary("Get transaction history")
-            .WithDescription("Returns a paginated list of transactions for the given account, with optional date filters.");
+            .WithDescription(
+                "Returns a paginated list of transactions for the given account, with optional date filters.")
+            .Produces<PagedResult<TransactionDto>>()
+            .Produces<ErrorResponse>(StatusCodes.Status422UnprocessableEntity)
+            .Produces<ErrorResponse>(StatusCodes.Status500InternalServerError);
 
         return app;
     }

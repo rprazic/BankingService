@@ -1,8 +1,10 @@
+using System.ComponentModel;
 using BankingService.Application.Commands.CreateAccount;
 using BankingService.Application.Commands.Deposit;
 using BankingService.Application.Commands.Transfer;
 using BankingService.Application.Commands.Withdraw;
 using BankingService.Api.Middleware;
+using BankingService.Application.DTOs;
 using BankingService.Application.Queries.GetAccountBalance;
 using BankingService.Application.Queries.GetAccountDetails;
 using BankingService.Application.Services;
@@ -21,27 +23,50 @@ public static class AccountEndpoints
 
         group.MapPost("/", CreateAccount)
             .WithSummary("Create account")
-            .WithDescription("Opens a new bank account with an initial deposit.");
+            .WithDescription("Opens a new bank account with an initial deposit.")
+            .Produces<CreateAccountResponse>(StatusCodes.Status201Created)
+            .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces<ErrorResponse>(StatusCodes.Status422UnprocessableEntity)
+            .Produces<ErrorResponse>(StatusCodes.Status500InternalServerError);
+
 
         group.MapGet("/{accountId:guid}", GetAccountDetails)
             .WithSummary("Get account details")
-            .WithDescription("Returns full account details including current balance.");
+            .WithDescription("Returns full account details including current balance.")
+            .Produces<AccountDto>()
+            .Produces<ErrorResponse>(StatusCodes.Status422UnprocessableEntity)
+            .Produces<ErrorResponse>(StatusCodes.Status500InternalServerError);
 
         group.MapGet("/{accountId:guid}/balance", GetAccountBalance)
             .WithSummary("Get account balance")
-            .WithDescription("Returns current balance only.");
+            .WithDescription("Returns current balance only.")
+            .Produces<AccountBalanceDto>()
+            .Produces<ErrorResponse>(StatusCodes.Status422UnprocessableEntity)
+            .Produces<ErrorResponse>(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/{accountId:guid}/deposits", Deposit)
             .WithSummary("Deposit")
-            .WithDescription("Deposits money into an account and returns the new balance.");
+            .WithDescription("Deposits money into an account and returns the new balance.")
+            .Produces<MoneyDto>()
+            .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces<ErrorResponse>(StatusCodes.Status422UnprocessableEntity)
+            .Produces<ErrorResponse>(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/{accountId:guid}/withdrawals", Withdraw)
             .WithSummary("Withdraw")
-            .WithDescription("Withdraws money from an account and returns the new balance.");
+            .WithDescription("Withdraws money from an account and returns the new balance.")
+            .Produces<MoneyDto>()
+            .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces<ErrorResponse>(StatusCodes.Status422UnprocessableEntity)
+            .Produces<ErrorResponse>(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/{fromAccountId:guid}/transfers", Transfer)
             .WithSummary("Transfer")
-            .WithDescription("Transfers money between two accounts.");
+            .WithDescription("Transfers money between two accounts.")
+            .Produces(StatusCodes.Status200OK)
+            .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces<ErrorResponse>(StatusCodes.Status422UnprocessableEntity)
+            .Produces<ErrorResponse>(StatusCodes.Status500InternalServerError);
 
         return app;
     }
@@ -54,7 +79,7 @@ public static class AccountEndpoints
         var result = await accountService.CreateAccountAsync(command, ct);
 
         return result.IsSuccess
-            ? Results.Created($"/api/v1/accounts/{result.Value}", new { AccountId = result.Value })
+            ? Results.Created($"/api/v1/accounts/{result.Value}", new CreateAccountResponse(result.Value))
             : Results.UnprocessableEntity(new ErrorResponse(result.Errors));
     }
 
@@ -111,20 +136,40 @@ public static class AccountEndpoints
             ? Results.Ok()
             : Results.UnprocessableEntity(new ErrorResponse(result.Errors));
     }
-    
-    private sealed record CreateAccountRequest(
-        string FirstName,
-        string LastName,
-        decimal InitialDeposit,
-        Currency Currency);
-    
-    private sealed record DepositRequest(decimal Amount, Currency Currency);
 
-    private sealed record WithdrawRequest(decimal Amount, Currency Currency);
+    private sealed record CreateAccountResponse(
+        [property: Description("Newly created account's unique identifier.")]
+        Guid AccountId);
+
+    private sealed record CreateAccountRequest(
+        [property: Description("Account holder's first name. Max 100 characters.")]
+        string FirstName,
+        [property: Description("Account holder's last name. Max 100 characters.")]
+        string LastName,
+        [property: Description("Initial deposit amount. Must be 0 or greater.")]
+        decimal InitialDeposit,
+        [property: Description("Account currency as ISO 4217 numeric code (978 = EUR, 840 = USD, 941 = RSD).")]
+        Currency Currency);
+
+    private sealed record DepositRequest(
+        [property: Description("Amount to deposit. Must be greater than 0.")]
+        decimal Amount,
+        [property: Description("Currency of the deposit. Must match the account's currency.")]
+        Currency Currency);
+
+    private sealed record WithdrawRequest(
+        [property: Description("Amount to withdraw. Must be greater than 0.")]
+        decimal Amount,
+        [property: Description("Currency of the withdrawal. Must match the account's currency.")]
+        Currency Currency);
 
     private sealed record TransferRequest(
+        [property: Description("Destination account identifier.")]
         Guid ToAccountId,
+        [property: Description("Amount to transfer. Must be greater than 0.")]
         decimal Amount,
+        [property: Description("Currency of the transfer. Must match both accounts' currency.")]
         Currency Currency,
+        [property: Description("Optional free-text note, e.g. 'Rent payment'.")]
         string? Description = null);
 }

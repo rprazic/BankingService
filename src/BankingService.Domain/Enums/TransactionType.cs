@@ -1,10 +1,8 @@
+using System.ComponentModel;
+
 namespace BankingService.Domain.Enums;
 
-/// <summary>
-/// Represents the direction of money flow on an account.
-/// Credit = money arriving (deposit, transfer in).
-/// Debit  = money leaving (withdrawal, transfer out).
-/// </summary>
+[Description("Direction of money flow, serialized as integer. Allowed values: 0 = Credit (money arriving: deposit or incoming transfer), 1 = Debit (money leaving: withdrawal or outgoing transfer).")]
 public enum TransactionType
 {
     Credit,
