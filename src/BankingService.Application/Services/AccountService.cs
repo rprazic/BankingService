@@ -1,5 +1,6 @@
 using BankingService.Application.Commands.CreateAccount;
 using BankingService.Application.Commands.Deposit;
+using BankingService.Application.Commands.Withdraw;
 using BankingService.Application.Common;
 using BankingService.Application.CQRS;
 using BankingService.Application.DTOs;
@@ -31,6 +32,12 @@ public class AccountService : IAccountService
     {
         await using var accountLock = await _lockService.AcquireAsync(command.AccountId, ct);
         return await _commandDispatcher.DispatchAsync<DepositCommand, Result<MoneyDto>>(command, ct);
+    }
+
+    public async Task<Result<MoneyDto>> WithdrawAsync(WithdrawCommand command, CancellationToken ct)
+    {
+        await using var accountLock = await _lockService.AcquireAsync(command.AccountId, ct);
+        return await _commandDispatcher.DispatchAsync<WithdrawCommand, Result<MoneyDto>>(command, ct);
     }
 
     public Task<Result<AccountDto>> GetAccountDetailsAsync(GetAccountDetailsQuery query, CancellationToken ct)
