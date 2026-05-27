@@ -60,7 +60,7 @@ public class AccountFlowTests : IntegrationTestBase
             var accountId = await CreateAccountAsync($"User{i}", "Test");
             var details = await Sut.GetAccountDetailsAsync(
                 new GetAccountDetailsQuery(accountId), CancellationToken.None);
-            ibans.Add(details.Value?.Iban);
+            ibans.Add(details.Value?.Iban ?? string.Empty);
         }
 
         ibans.Should().OnlyHaveUniqueItems();
