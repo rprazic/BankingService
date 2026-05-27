@@ -1,4 +1,34 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # BankingService — Claude Code Instructions
+
+## Common Commands
+
+```bash
+# Run the API
+dotnet run --project src/BankingService.Api
+
+# Build
+dotnet build
+
+# All tests
+dotnet test
+
+# Unit tests only
+dotnet test tests/BankingService.Unit.Tests
+
+# Integration tests only
+dotnet test tests/BankingService.Integration.Tests
+
+# Single test by name filter
+dotnet test --filter "FullyQualifiedName~HandleAsync_WithValidCommand"
+
+# Docker
+docker build -f src/BankingService.Api/Dockerfile -t banking-service .
+docker run -p 8080:8080 -v banking_data:/app/data banking-service
+```
 
 ## Project Overview
 A .NET 10 banking service implementing account management, deposits, withdrawals, and transfers.
@@ -36,6 +66,16 @@ BankingService.sln
 ### Testing
 9. **Every handler must have a unit test.** No exceptions.
 10. **Unit tests use SQLite in-memory.** Integration tests use a real `.db` file.
+11. **Test naming:** `MethodName_StateUnderTest_ExpectedBehavior` — e.g. `HandleAsync_WithInsufficientFunds_ReturnsFailure`.
+12. **Keep `SqliteConnection` open** for the test class lifetime in unit tests — closing it drops the in-memory schema.
+
+### Error Handling (two-track model)
+13. **Validation errors** (input shape, bounds) → `BankingValidationException` → 400. Raised by the decorator, never by handlers.
+14. **Domain errors** (insufficient funds, not found) → `Result.Failure(...)` → 422. Returned from handlers, never thrown.
+15. **Mutation endpoints are rate-limited** (10 req/min/IP). Exceeded requests return 429 with an `ErrorResponse` body.
+
+### Multi-step commands (saveChanges: false)
+16. **When a handler calls sub-handlers**, pass `saveChanges: false` to each and call `SaveChangesAsync` once at the end (see `TransferCommandHandler`). Wrap in an EF Core `BeginTransactionAsync` for atomicity.
 
 ## How to Add Features
 
