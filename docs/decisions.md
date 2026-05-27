@@ -100,6 +100,15 @@
 
 ---
 
+
+## ADR-007: Auth is out of scope
+
+**Context:** The task does not mention authentication or authorization.
+
+**Decision:** No auth is implemented. The service trusts the `AccountId` provided in requests.
+
+**Architectural note:** Authentication would plug in at the API layer (JWT bearer middleware). Authorization would be enforced either in the facade (`if (caller.AccountId != command.AccountId) return Forbidden`) or via an ASP.NET Core policy. The `IAccountService` interface would receive a caller identity parameter. This is a one-layer concern that does not affect the Application or Domain layers.
+
 ## ADR-008: Cross-currency transfers are not supported — FX extension planned via third-party API + Polly
 
 **Context:** Accounts carry a fixed `Currency`. A transfer between a EUR account and a USD account cannot be fulfilled at face value — the amounts are incommensurable without an exchange rate.
@@ -122,10 +131,17 @@
 
 ---
 
-## ADR-007: Auth is out of scope
+## ADR-009: TimeProvider injection over DateTime.UtcNow
 
-**Context:** The task does not mention authentication or authorization.
+**Context:** Handlers that record timestamps (`CreateAccount`, `Deposit`, `Withdraw`) were calling `DateTime.UtcNow` directly, making the timestamp untestable and the handlers non-deterministic under test.
 
-**Decision:** No auth is implemented. The service trusts the `AccountId` provided in requests.
+**Decision:** Inject `TimeProvider` (built into .NET 8+) into every handler that needs the current time. Resolve `TimeProvider.System` as a singleton from DI in production; tests can substitute a `FakeTimeProvider` from `Microsoft.Extensions.TimeProvider.Testing` when timestamp assertions are needed.
 
-**Architectural note:** Authentication would plug in at the API layer (JWT bearer middleware). Authorization would be enforced either in the facade (`if (caller.AccountId != command.AccountId) return Forbidden`) or via an ASP.NET Core policy. The `IAccountService` interface would receive a caller identity parameter. This is a one-layer concern that does not affect the Application or Domain layers.
+**Reasons:**
+- `TimeProvider` is the BCL-sanctioned abstraction for system time — no custom `IClock` interface required
+- Enables deterministic unit tests that control the clock
+- `TimeProvider.GetUtcNow()` returns `DateTimeOffset`; `.UtcDateTime` gives the `DateTime` expected by the domain model
+
+**Consequence:** All timestamp-producing handlers take a `TimeProvider` constructor parameter. `TimeProvider.System` is registered as a singleton in `DependencyInjection.AddApplication()`.
+
+---

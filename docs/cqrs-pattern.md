@@ -178,19 +178,21 @@ public class CreateAccountCommandHandler : ICommandHandler<CreateAccountCommand,
     private readonly BankingDbContext _context;
     private readonly IIbanGenerator _ibanGenerator;
     private readonly ICommandDispatcher _dispatcher;
+    private readonly TimeProvider _timeProvider;
 
     public CreateAccountCommandHandler(BankingDbContext context, IIbanGenerator ibanGenerator,
-        ICommandDispatcher dispatcher)
+        ICommandDispatcher dispatcher, TimeProvider timeProvider)
     {
         _context = context;
         _ibanGenerator = ibanGenerator;
         _dispatcher = dispatcher;
+        _timeProvider = timeProvider;
     }
 
     public async Task<Result<Guid>> HandleAsync(
         CreateAccountCommand command, CancellationToken ct, bool saveChanges = true)
     {
-        var now = DateTime.UtcNow;
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var account = CreateAccountMapper.ToEntity(command, _ibanGenerator.Generate(), now);
         _context.Accounts.Add(account);
 

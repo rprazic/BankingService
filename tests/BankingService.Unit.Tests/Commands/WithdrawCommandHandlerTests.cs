@@ -14,7 +14,7 @@ public class WithdrawCommandHandlerTests : BankingDbContextTestBase
 
     public WithdrawCommandHandlerTests()
     {
-        _sut = new WithdrawCommandHandler(Context, CreateDispatcher(), NullLogger<WithdrawCommandHandler>.Instance);
+        _sut = new WithdrawCommandHandler(Context, CreateDispatcher(), NullLogger<WithdrawCommandHandler>.Instance, TimeProvider.System);
     }
 
     [Fact]

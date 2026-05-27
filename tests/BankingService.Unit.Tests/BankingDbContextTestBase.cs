@@ -46,6 +46,7 @@ public abstract class BankingDbContextTestBase : IDisposable
     {
         var services = new ServiceCollection();
         services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
+        services.AddSingleton(TimeProvider.System);
         services.AddSingleton(Context);
         services.AddScoped<ICommandHandler<CreateTransactionCommand, Result<Guid>>, CreateTransactionCommandHandler>();
         services.AddScoped<ICommandHandler<DepositCommand, Result<MoneyDto>>, DepositCommandHandler>();

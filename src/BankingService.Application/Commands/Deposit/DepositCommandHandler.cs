@@ -15,13 +15,15 @@ public class DepositCommandHandler : ICommandHandler<DepositCommand, Result<Mone
     private readonly BankingDbContext _context;
     private readonly ICommandDispatcher _dispatcher;
     private readonly ILogger<DepositCommandHandler> _logger;
+    private readonly TimeProvider _timeProvider;
 
     public DepositCommandHandler(BankingDbContext context, ICommandDispatcher dispatcher,
-        ILogger<DepositCommandHandler> logger)
+        ILogger<DepositCommandHandler> logger, TimeProvider timeProvider)
     {
         _context = context;
         _dispatcher = dispatcher;
         _logger = logger;
+        _timeProvider = timeProvider;
     }
 
     public async Task<Result<MoneyDto>> HandleAsync(DepositCommand command, CancellationToken ct,
@@ -44,7 +46,7 @@ public class DepositCommandHandler : ICommandHandler<DepositCommand, Result<Mone
             return Result<MoneyDto>.Failure("Account is not active.");
         }
 
-        var now = DateTime.UtcNow;
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         try
         {
             account.Deposit(command.Amount, now);

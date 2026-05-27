@@ -15,13 +15,15 @@ public class WithdrawCommandHandler : ICommandHandler<WithdrawCommand, Result<Mo
     private readonly BankingDbContext _context;
     private readonly ICommandDispatcher _dispatcher;
     private readonly ILogger<WithdrawCommandHandler> _logger;
+    private readonly TimeProvider _timeProvider;
 
     public WithdrawCommandHandler(BankingDbContext context, ICommandDispatcher dispatcher,
-        ILogger<WithdrawCommandHandler> logger)
+        ILogger<WithdrawCommandHandler> logger, TimeProvider timeProvider)
     {
         _context = context;
         _dispatcher = dispatcher;
         _logger = logger;
+        _timeProvider = timeProvider;
     }
 
     public async Task<Result<MoneyDto>> HandleAsync(WithdrawCommand command, CancellationToken ct,
@@ -44,7 +46,7 @@ public class WithdrawCommandHandler : ICommandHandler<WithdrawCommand, Result<Mo
             return Result<MoneyDto>.Failure("Account is not active.");
         }
 
-        var now = DateTime.UtcNow;
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         try
         {
             account.Withdraw(command.Amount, now);
