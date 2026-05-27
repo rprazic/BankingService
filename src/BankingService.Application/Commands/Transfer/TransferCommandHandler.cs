@@ -22,7 +22,7 @@ public class TransferCommandHandler : ICommandHandler<TransferCommand, Result>
     public async Task<Result> HandleAsync(TransferCommand command, CancellationToken ct, bool saveChanges = true)
     {
         var withdrawResult = await _dispatcher.DispatchAsync<WithdrawCommand, Result<MoneyDto>>(
-            new WithdrawCommand(command.FromAccountId, new Money(command.Amount)),
+            new WithdrawCommand(command.FromAccountId, new Money(command.Amount), command.Description),
             ct, saveChanges: false);
         if (!withdrawResult.IsSuccess)
         {
@@ -30,7 +30,7 @@ public class TransferCommandHandler : ICommandHandler<TransferCommand, Result>
         }
 
         var depositResult = await _dispatcher.DispatchAsync<DepositCommand, Result<MoneyDto>>(
-            new DepositCommand(command.ToAccountId, new Money(command.Amount)),
+            new DepositCommand(command.ToAccountId, new Money(command.Amount), command.Description),
             ct, saveChanges: false);
         if (!depositResult.IsSuccess)
         {

@@ -7,5 +7,6 @@ namespace BankingService.Application.Commands.Transfer;
 public record TransferCommand(
     Guid FromAccountId,
     Guid ToAccountId,
-    Money Amount
+    Money Amount,
+    string? Description = null
 ) : ICommand<Result>;

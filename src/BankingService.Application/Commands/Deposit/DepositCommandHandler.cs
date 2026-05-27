@@ -45,7 +45,8 @@ public class DepositCommandHandler : ICommandHandler<DepositCommand, Result<Mone
         account.UpdatedAt = now;
 
         await _dispatcher.DispatchAsync<CreateTransactionCommand, Result<Guid>>(
-            new CreateTransactionCommand(account.AccountId, TransactionType.Credit, command.Amount, now, "Deposit"),
+            new CreateTransactionCommand(account.AccountId, TransactionType.Credit, command.Amount, now,
+                command.Description ?? "Deposit"),
             ct, saveChanges: false);
 
         if (saveChanges)

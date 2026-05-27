@@ -19,7 +19,8 @@ public class WithdrawCommandHandler : ICommandHandler<WithdrawCommand, Result<Mo
         _dispatcher = dispatcher;
     }
 
-    public async Task<Result<MoneyDto>> HandleAsync(WithdrawCommand command, CancellationToken ct, bool saveChanges = true)
+    public async Task<Result<MoneyDto>> HandleAsync(WithdrawCommand command, CancellationToken ct,
+        bool saveChanges = true)
     {
         var account = await _context.Accounts
             .FirstOrDefaultAsync(a => a.AccountId == command.AccountId, ct);
@@ -49,7 +50,8 @@ public class WithdrawCommandHandler : ICommandHandler<WithdrawCommand, Result<Mo
         account.UpdatedAt = now;
 
         await _dispatcher.DispatchAsync<CreateTransactionCommand, Result<Guid>>(
-            new CreateTransactionCommand(account.AccountId, TransactionType.Debit, command.Amount, now, "Withdrawal"),
+            new CreateTransactionCommand(account.AccountId, TransactionType.Debit, command.Amount, now,
+                command.Description ?? "Withdrawal"),
             ct, saveChanges: false);
 
         if (saveChanges)

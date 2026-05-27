@@ -100,26 +100,31 @@ public static class AccountEndpoints
             : Results.UnprocessableEntity(new ErrorResponse(result.Errors));
     }
 
-    private sealed record CreateAccountRequest(
-        string FirstName,
-        string LastName,
-        decimal InitialDeposit,
-        Currency Currency);
-
     private static async Task<IResult> Transfer(Guid fromAccountId, [FromBody] TransferRequest request,
         IAccountService accountService, CancellationToken ct)
     {
-        var command = new TransferCommand(fromAccountId, request.ToAccountId, new Money(request.Amount, request.Currency));
+        var command = new TransferCommand(fromAccountId, request.ToAccountId,
+            new Money(request.Amount, request.Currency), request.Description);
         var result = await accountService.TransferAsync(command, ct);
 
         return result.IsSuccess
             ? Results.Ok()
             : Results.UnprocessableEntity(new ErrorResponse(result.Errors));
     }
-
+    
+    private sealed record CreateAccountRequest(
+        string FirstName,
+        string LastName,
+        decimal InitialDeposit,
+        Currency Currency);
+    
     private sealed record DepositRequest(decimal Amount, Currency Currency);
 
     private sealed record WithdrawRequest(decimal Amount, Currency Currency);
 
-    private sealed record TransferRequest(Guid ToAccountId, decimal Amount, Currency Currency);
+    private sealed record TransferRequest(
+        Guid ToAccountId,
+        decimal Amount,
+        Currency Currency,
+        string? Description = null);
 }

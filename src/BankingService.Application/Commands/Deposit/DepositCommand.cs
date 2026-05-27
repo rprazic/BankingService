@@ -7,5 +7,6 @@ namespace BankingService.Application.Commands.Deposit;
 
 public record DepositCommand(
     Guid AccountId,
-    Money Amount
+    Money Amount,
+    string? Description = null
 ) : ICommand<Result<MoneyDto>>;
