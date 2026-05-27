@@ -60,7 +60,7 @@ tests/
 └── BankingService.Integration.Tests/ # IAccountService-level tests, real SQLite
 ```
 
-Dependency direction: `Api → Application ← Infrastructure`, both pointing inward to `Domain`.
+Dependency direction: `Api → Application → Infrastructure → Domain` (Api also references Infrastructure directly for DI registration).
 
 ## Tech Stack
 
