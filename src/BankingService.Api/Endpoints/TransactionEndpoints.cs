@@ -1,6 +1,6 @@
-using BankingService.Application;
 using BankingService.Application.Queries.GetAccountTransactions;
 using BankingService.Api.Middleware;
+using BankingService.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BankingService.Api.Endpoints;

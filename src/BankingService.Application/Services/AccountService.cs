@@ -9,7 +9,7 @@ using BankingService.Application.Queries.GetAccountDetails;
 using BankingService.Application.Queries.GetAccountTransactions;
 using BankingService.Infrastructure.Locking;
 
-namespace BankingService.Application;
+namespace BankingService.Application.Services;
 
 public class AccountService : IAccountService
 {

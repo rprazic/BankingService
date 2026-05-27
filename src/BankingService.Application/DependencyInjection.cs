@@ -1,5 +1,6 @@
 using BankingService.Application.Behaviours;
 using BankingService.Application.CQRS;
+using BankingService.Application.Services;
 using BankingService.Infrastructure;
 using BankingService.Infrastructure.Locking;
 using BankingService.Infrastructure.Services;

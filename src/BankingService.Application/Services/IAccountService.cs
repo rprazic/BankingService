@@ -7,7 +7,7 @@ using BankingService.Application.Queries.GetAccountBalance;
 using BankingService.Application.Queries.GetAccountDetails;
 using BankingService.Application.Queries.GetAccountTransactions;
 
-namespace BankingService.Application;
+namespace BankingService.Application.Services;
 
 public interface IAccountService
 {
@@ -24,5 +24,6 @@ public interface IAccountService
 
     Task<Result<AccountBalanceDto>> GetAccountBalanceAsync(GetAccountBalanceQuery query, CancellationToken ct);
 
-    Task<Result<PagedResult<TransactionDto>>> GetAccountTransactionsAsync(GetAccountTransactionsQuery query, CancellationToken ct);
+    Task<Result<PagedResult<TransactionDto>>> GetAccountTransactionsAsync(GetAccountTransactionsQuery query,
+        CancellationToken ct);
 }
