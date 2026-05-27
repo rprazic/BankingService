@@ -1,5 +1,6 @@
 using BankingService.Application.Commands.CreateAccount;
 using BankingService.Application.Commands.Deposit;
+using BankingService.Application.Commands.Transfer;
 using BankingService.Application.Commands.Withdraw;
 using BankingService.Application.Common;
 using BankingService.Application.DTOs;
@@ -17,8 +18,7 @@ public interface IAccountService
 
     Task<Result<MoneyDto>> WithdrawAsync(WithdrawCommand command, CancellationToken ct);
 
-    // TODO: unlock - Transfer
-    // Task<Result> TransferAsync(TransferCommand command, CancellationToken ct);
+    Task<Result> TransferAsync(TransferCommand command, CancellationToken ct);
 
     Task<Result<AccountDto>> GetAccountDetailsAsync(GetAccountDetailsQuery query, CancellationToken ct);
 

@@ -1,5 +1,6 @@
 using BankingService.Application.Commands.CreateAccount;
 using BankingService.Application.Commands.Deposit;
+using BankingService.Application.Commands.Transfer;
 using BankingService.Application.Commands.Withdraw;
 using BankingService.Application.Common;
 using BankingService.Application.CQRS;
@@ -38,6 +39,18 @@ public class AccountService : IAccountService
     {
         await using var accountLock = await _lockService.AcquireAsync(command.AccountId, ct);
         return await _commandDispatcher.DispatchAsync<WithdrawCommand, Result<MoneyDto>>(command, ct);
+    }
+
+    public async Task<Result> TransferAsync(TransferCommand command, CancellationToken ct)
+    {
+        var (first, second) = command.FromAccountId.CompareTo(command.ToAccountId) < 0
+            ? (command.FromAccountId, command.ToAccountId)
+            : (command.ToAccountId, command.FromAccountId);
+
+        await using var firstLock = await _lockService.AcquireAsync(first, ct);
+        await using var secondLock = await _lockService.AcquireAsync(second, ct);
+
+        return await _commandDispatcher.DispatchAsync<TransferCommand, Result>(command, ct);
     }
 
     public Task<Result<AccountDto>> GetAccountDetailsAsync(GetAccountDetailsQuery query, CancellationToken ct)

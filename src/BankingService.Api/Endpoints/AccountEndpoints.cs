@@ -1,5 +1,6 @@
 using BankingService.Application.Commands.CreateAccount;
 using BankingService.Application.Commands.Deposit;
+using BankingService.Application.Commands.Transfer;
 using BankingService.Application.Commands.Withdraw;
 using BankingService.Api.Middleware;
 using BankingService.Application.Queries.GetAccountBalance;
@@ -37,6 +38,10 @@ public static class AccountEndpoints
         group.MapPost("/{accountId:guid}/withdrawals", Withdraw)
             .WithSummary("Withdraw")
             .WithDescription("Withdraws money from an account and returns the new balance.");
+
+        group.MapPost("/{fromAccountId:guid}/transfers", Transfer)
+            .WithSummary("Transfer")
+            .WithDescription("Transfers money between two accounts.");
 
         return app;
     }
@@ -101,7 +106,20 @@ public static class AccountEndpoints
         decimal InitialDeposit,
         Currency Currency);
 
+    private static async Task<IResult> Transfer(Guid fromAccountId, [FromBody] TransferRequest request,
+        IAccountService accountService, CancellationToken ct)
+    {
+        var command = new TransferCommand(fromAccountId, request.ToAccountId, new Money(request.Amount, request.Currency));
+        var result = await accountService.TransferAsync(command, ct);
+
+        return result.IsSuccess
+            ? Results.Ok()
+            : Results.UnprocessableEntity(new ErrorResponse(result.Errors));
+    }
+
     private sealed record DepositRequest(decimal Amount, Currency Currency);
 
     private sealed record WithdrawRequest(decimal Amount, Currency Currency);
+
+    private sealed record TransferRequest(Guid ToAccountId, decimal Amount, Currency Currency);
 }
