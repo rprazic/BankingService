@@ -5,6 +5,7 @@ using BankingService.Application.CQRS;
 using BankingService.Application.DTOs;
 using BankingService.Domain.ValueObjects;
 using BankingService.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BankingService.Application.Commands.Transfer;
@@ -25,6 +26,21 @@ public class TransferCommandHandler : ICommandHandler<TransferCommand, Result>
 
     public async Task<Result> HandleAsync(TransferCommand command, CancellationToken ct, bool saveChanges = true)
     {
+        var sourceAccount = await _context.Accounts
+            .FirstOrDefaultAsync(a => a.AccountId == command.FromAccountId, ct);
+        var destinationAccount = await _context.Accounts
+            .FirstOrDefaultAsync(a => a.AccountId == command.ToAccountId, ct);
+
+        if (sourceAccount is not null && destinationAccount is not null
+                                      && sourceAccount.Currency != destinationAccount.Currency)
+        {
+            _logger.LogWarning(
+                "Transfer failed. FromAccountId: {FromAccountId}, ToAccountId: {ToAccountId}, Reason: Cross-currency transfer ({SourceCurrency} -> {DestinationCurrency})",
+                command.FromAccountId, command.ToAccountId, sourceAccount.Currency, destinationAccount.Currency);
+            return Result.Failure(
+                $"Cross-currency transfers are not supported. Source account currency: {sourceAccount.Currency}, destination account currency: {destinationAccount.Currency}.");
+        }
+
         var withdrawResult = await _dispatcher.DispatchAsync<WithdrawCommand, Result<MoneyDto>>(
             new WithdrawCommand(command.FromAccountId, new Money(command.Amount), command.Description),
             ct, saveChanges: false);

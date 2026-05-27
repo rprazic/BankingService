@@ -100,6 +100,28 @@
 
 ---
 
+## ADR-008: Cross-currency transfers are not supported — FX extension planned via third-party API + Polly
+
+**Context:** Accounts carry a fixed `Currency`. A transfer between a EUR account and a USD account cannot be fulfilled at face value — the amounts are incommensurable without an exchange rate.
+
+**Decision:** Reject cross-currency transfers at the handler level with a clear error: `"Cross-currency transfers are not supported. Source account currency: {X}, destination account currency: {Y}."` No FX conversion is performed.
+
+**Reasons:**
+- Introducing live FX rates requires a third-party API dependency and rate-caching — both out of scope for this iteration
+- Failing explicitly with a named error is strictly better than the previous silent failure (withdraw succeeds, deposit fails with a generic currency mismatch message)
+- The error surfaces at the start of `TransferCommandHandler`, before any balance mutation, so the source account is never touched
+
+**Extension path — FX support:**
+1. Introduce `IFxRateProvider` in the Application layer with a single method `GetRateAsync(Currency from, Currency to, CancellationToken ct) → decimal`
+2. Implement against a third-party REST FX API (e.g. exchangerate.host or Fixer.io) in the Infrastructure layer
+3. Wrap the HTTP client with **Polly** policies: retry with exponential back-off for transient failures, circuit breaker to shed load during outages, and a fallback to a short-TTL cached rate so transfers degrade gracefully rather than hard-failing
+4. `TransferCommandHandler` calls `IFxRateProvider` when currencies differ, converts the debit amount, and records both the original and converted amounts on the transaction
+5. The cross-currency guard becomes a feature-flag check rather than a hard rejection — no change to the facade, validator, or `Account` entity
+
+**Consequence:** Until the extension is built, any cross-currency transfer request returns HTTP 422. The error message explicitly names both currencies so callers can adapt without guessing.
+
+---
+
 ## ADR-007: Auth is out of scope
 
 **Context:** The task does not mention authentication or authorization.

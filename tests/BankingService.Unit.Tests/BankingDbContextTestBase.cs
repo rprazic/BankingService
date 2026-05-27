@@ -57,14 +57,14 @@ public abstract class BankingDbContextTestBase : IDisposable
     }
 
     protected static Account CreateAccount(decimal balance = 1000m, bool isActive = true, string firstName = "Test",
-        string lastName = "User") => new()
+        string lastName = "User", Currency currency = Currency.EUR) => new()
     {
         AccountId = Guid.NewGuid(),
         FirstName = firstName,
         LastName = lastName,
         Iban = $"RS35{Guid.NewGuid():N}"[..22],
-        Currency = Currency.EUR,
-        Balance = new Money(balance, Currency.EUR),
+        Currency = currency,
+        Balance = new Money(balance, currency),
         IsActive = isActive,
         CreatedAt = DateTime.UtcNow,
         UpdatedAt = DateTime.UtcNow

@@ -180,6 +180,39 @@ public class TransferCommandHandlerTests : BankingDbContextTestBase
     }
 
     [Fact]
+    public async Task HandleAsync_AccountsHaveDifferentCurrencies_ReturnsFailureWithBothCurrenciesInMessage()
+    {
+        var source = CreateAccount(balance: 1000m, currency: Currency.EUR);
+        var destination = CreateAccount(balance: 500m, currency: Currency.USD);
+        Context.Accounts.AddRange(source, destination);
+        await Context.SaveChangesAsync();
+
+        var result = await _sut.HandleAsync(
+            new TransferCommand(source.AccountId, destination.AccountId, new Money(200m, Currency.EUR)),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().ContainSingle()
+            .Which.Should().Contain("EUR").And.Contain("USD");
+    }
+
+    [Fact]
+    public async Task HandleAsync_AccountsHaveDifferentCurrencies_DoesNotModifySourceBalance()
+    {
+        var source = CreateAccount(balance: 1000m, currency: Currency.EUR);
+        var destination = CreateAccount(balance: 500m, currency: Currency.USD);
+        Context.Accounts.AddRange(source, destination);
+        await Context.SaveChangesAsync();
+
+        await _sut.HandleAsync(
+            new TransferCommand(source.AccountId, destination.AccountId, new Money(200m, Currency.EUR)),
+            CancellationToken.None);
+
+        var updated = await Context.Accounts.FindAsync(source.AccountId);
+        updated!.Balance.Amount.Should().Be(1000m);
+    }
+
+    [Fact]
     public async Task HandleAsync_InsufficientFunds_ReturnsFailure()
     {
         var source = CreateAccount(balance: 100m);
