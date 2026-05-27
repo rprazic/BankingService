@@ -1,5 +1,6 @@
 using BankingService.Application.Commands.CreateAccount;
 using BankingService.Domain.Entities;
+using BankingService.Domain.ValueObjects;
 
 namespace BankingService.Application.Mappings;
 
@@ -12,7 +13,7 @@ public static class CreateAccountMapper
         LastName = command.LastName,
         Iban = iban,
         Currency = command.InitialDeposit.Currency,
-        Balance = command.InitialDeposit,
+        Balance = new Money(command.InitialDeposit),
         IsActive = true,
         CreatedAt = now,
         UpdatedAt = now
