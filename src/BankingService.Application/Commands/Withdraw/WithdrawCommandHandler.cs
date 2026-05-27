@@ -3,6 +3,7 @@ using BankingService.Application.Common;
 using BankingService.Application.CQRS;
 using BankingService.Application.DTOs;
 using BankingService.Domain.Enums;
+using BankingService.Domain.Exceptions;
 using BankingService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -43,23 +44,23 @@ public class WithdrawCommandHandler : ICommandHandler<WithdrawCommand, Result<Mo
             return Result<MoneyDto>.Failure("Account is not active.");
         }
 
-        if (command.Amount.Currency != account.Currency)
+        var now = DateTime.UtcNow;
+        try
+        {
+            account.Withdraw(command.Amount, now);
+        }
+        catch (CurrencyMismatchException)
         {
             _logger.LogWarning("Withdrawal failed. AccountId: {AccountId}, Reason: {Reason}",
                 command.AccountId, "Currency mismatch");
             return Result<MoneyDto>.Failure("Withdrawal currency does not match account currency.");
         }
-
-        if (command.Amount.Amount > account.Balance.Amount)
+        catch (InsufficientFundsException)
         {
             _logger.LogWarning("Withdrawal failed. AccountId: {AccountId}, Reason: {Reason}",
                 command.AccountId, "Insufficient funds");
             return Result<MoneyDto>.Failure("Insufficient funds.");
         }
-
-        var now = DateTime.UtcNow;
-        account.Balance -= command.Amount;
-        account.UpdatedAt = now;
 
         await _dispatcher.DispatchAsync<CreateTransactionCommand, Result<Guid>>(
             new CreateTransactionCommand(account.AccountId, TransactionType.Debit, command.Amount, now,
