@@ -1,6 +1,7 @@
 using BankingService.Application.Common;
 using BankingService.Application.CQRS;
 using BankingService.Application.DTOs;
+using BankingService.Application.Mappings;
 using BankingService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -45,13 +46,7 @@ public class GetAccountTransactionsQueryHandler
             .OrderByDescending(t => t.CreatedAt)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Select(t => new TransactionDto(
-                t.TransactionId,
-                t.Type,
-                new MoneyDto(t.Amount.Amount, t.Amount.Currency),
-                t.RelatedAccountId,
-                t.Description,
-                t.CreatedAt))
+            .Select(TransactionDtoMapper.Projection())
             .ToListAsync(ct);
 
         return Result<PagedResult<TransactionDto>>.Success(

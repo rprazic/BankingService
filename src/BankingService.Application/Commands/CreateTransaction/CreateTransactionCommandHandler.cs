@@ -1,6 +1,6 @@
 using BankingService.Application.Common;
 using BankingService.Application.CQRS;
-using BankingService.Domain.Entities;
+using BankingService.Application.Mappings;
 using BankingService.Infrastructure.Persistence;
 
 namespace BankingService.Application.Commands.CreateTransaction;
@@ -14,17 +14,7 @@ public class CreateTransactionCommandHandler : ICommandHandler<CreateTransaction
     public async Task<Result<Guid>> HandleAsync(CreateTransactionCommand command, CancellationToken ct,
         bool saveChanges = true)
     {
-        var transaction = new Transaction
-        {
-            TransactionId = Guid.NewGuid(),
-            AccountId = command.AccountId,
-            Type = command.Type,
-            Amount = command.Amount,
-            Description = command.Description,
-            RelatedAccountId = command.RelatedAccountId,
-            CreatedAt = command.CreatedAt
-        };
-
+        var transaction = CreateTransactionMapper.ToEntity(command);
         _context.Transactions.Add(transaction);
 
         if (saveChanges)

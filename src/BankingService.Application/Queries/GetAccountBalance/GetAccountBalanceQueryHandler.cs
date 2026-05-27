@@ -1,6 +1,7 @@
 using BankingService.Application.Common;
 using BankingService.Application.CQRS;
 using BankingService.Application.DTOs;
+using BankingService.Application.Mappings;
 using BankingService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,16 +15,14 @@ public class GetAccountBalanceQueryHandler : IQueryHandler<GetAccountBalanceQuer
 
     public async Task<Result<AccountBalanceDto>> HandleAsync(GetAccountBalanceQuery query, CancellationToken ct)
     {
-        var account = await _context.Accounts
+        var dto = await _context.Accounts
             .AsNoTracking()
-            .Select(a => new { a.AccountId, a.Balance })
-            .FirstOrDefaultAsync(a => a.AccountId == query.AccountId, ct);
+            .Where(a => a.AccountId == query.AccountId)
+            .Select(AccountBalanceDtoMapper.Projection())
+            .FirstOrDefaultAsync(ct);
 
-        return account switch
-        {
-            null => Result<AccountBalanceDto>.Failure("Account not found."),
-            _ => Result<AccountBalanceDto>.Success(new AccountBalanceDto(account.AccountId,
-                new MoneyDto(account.Balance.Amount, account.Balance.Currency)))
-        };
+        return dto is null
+            ? Result<AccountBalanceDto>.Failure("Account not found.")
+            : Result<AccountBalanceDto>.Success(dto);
     }
 }

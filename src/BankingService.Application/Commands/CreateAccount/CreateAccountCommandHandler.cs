@@ -1,7 +1,7 @@
 using BankingService.Application.Commands.CreateTransaction;
 using BankingService.Application.Common;
 using BankingService.Application.CQRS;
-using BankingService.Domain.Entities;
+using BankingService.Application.Mappings;
 using BankingService.Domain.Enums;
 using BankingService.Infrastructure.Persistence;
 using BankingService.Infrastructure.Services;
@@ -26,20 +26,7 @@ public class CreateAccountCommandHandler : ICommandHandler<CreateAccountCommand,
         bool saveChanges = true)
     {
         var now = DateTime.UtcNow;
-
-        var account = new Account
-        {
-            AccountId = Guid.NewGuid(),
-            FirstName = command.FirstName,
-            LastName = command.LastName,
-            Iban = _ibanGenerator.Generate(),
-            Currency = command.InitialDeposit.Currency,
-            Balance = command.InitialDeposit,
-            IsActive = true,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
-
+        var account = CreateAccountMapper.ToEntity(command, _ibanGenerator.Generate(), now);
         _context.Accounts.Add(account);
 
         if (command.InitialDeposit > 0)
