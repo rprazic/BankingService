@@ -5,6 +5,7 @@ using BankingService.Application.Mappings;
 using BankingService.Domain.Enums;
 using BankingService.Infrastructure.Persistence;
 using BankingService.Infrastructure.Services;
+using Microsoft.Extensions.Logging;
 
 namespace BankingService.Application.Commands.CreateAccount;
 
@@ -13,13 +14,15 @@ public class CreateAccountCommandHandler : ICommandHandler<CreateAccountCommand,
     private readonly BankingDbContext _context;
     private readonly IIbanGenerator _ibanGenerator;
     private readonly ICommandDispatcher _dispatcher;
+    private readonly ILogger<CreateAccountCommandHandler> _logger;
 
     public CreateAccountCommandHandler(BankingDbContext context, IIbanGenerator ibanGenerator,
-        ICommandDispatcher dispatcher)
+        ICommandDispatcher dispatcher, ILogger<CreateAccountCommandHandler> logger)
     {
         _context = context;
         _ibanGenerator = ibanGenerator;
         _dispatcher = dispatcher;
+        _logger = logger;
     }
 
     public async Task<Result<Guid>> HandleAsync(CreateAccountCommand command, CancellationToken ct,
@@ -42,6 +45,7 @@ public class CreateAccountCommandHandler : ICommandHandler<CreateAccountCommand,
             await _context.SaveChangesAsync(ct);
         }
 
+        _logger.LogInformation("Account created. AccountId: {AccountId}", account.AccountId);
         return Result<Guid>.Success(account.AccountId);
     }
 }

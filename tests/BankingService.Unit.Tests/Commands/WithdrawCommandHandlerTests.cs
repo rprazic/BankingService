@@ -3,6 +3,7 @@ using BankingService.Domain.Enums;
 using BankingService.Domain.ValueObjects;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using TransactionType = BankingService.Domain.Enums.TransactionType;
 
 namespace BankingService.Unit.Tests.Commands;
@@ -13,7 +14,7 @@ public class WithdrawCommandHandlerTests : BankingDbContextTestBase
 
     public WithdrawCommandHandlerTests()
     {
-        _sut = new WithdrawCommandHandler(Context, CreateDispatcher());
+        _sut = new WithdrawCommandHandler(Context, CreateDispatcher(), NullLogger<WithdrawCommandHandler>.Instance);
     }
 
     [Fact]
@@ -23,7 +24,8 @@ public class WithdrawCommandHandlerTests : BankingDbContextTestBase
         Context.Accounts.Add(account);
         await Context.SaveChangesAsync();
 
-        var result = await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.EUR)), CancellationToken.None);
+        var result = await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.EUR)),
+            CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
     }
@@ -35,7 +37,8 @@ public class WithdrawCommandHandlerTests : BankingDbContextTestBase
         Context.Accounts.Add(account);
         await Context.SaveChangesAsync();
 
-        var result = await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.EUR)), CancellationToken.None);
+        var result = await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.EUR)),
+            CancellationToken.None);
 
         result.Value!.Amount.Should().Be(300m);
         result.Value.Currency.Should().Be(Currency.EUR);
@@ -48,7 +51,8 @@ public class WithdrawCommandHandlerTests : BankingDbContextTestBase
         Context.Accounts.Add(account);
         await Context.SaveChangesAsync();
 
-        await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.EUR)), CancellationToken.None);
+        await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.EUR)),
+            CancellationToken.None);
 
         var updated = await Context.Accounts.FindAsync(account.AccountId);
         updated!.Balance.Amount.Should().Be(300m);
@@ -61,7 +65,8 @@ public class WithdrawCommandHandlerTests : BankingDbContextTestBase
         Context.Accounts.Add(account);
         await Context.SaveChangesAsync();
 
-        await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.EUR)), CancellationToken.None);
+        await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.EUR)),
+            CancellationToken.None);
 
         var transaction = await Context.Transactions.FirstOrDefaultAsync();
         transaction.Should().NotBeNull();
@@ -74,7 +79,8 @@ public class WithdrawCommandHandlerTests : BankingDbContextTestBase
     [Fact]
     public async Task HandleAsync_AccountNotFound_ReturnsFailure()
     {
-        var result = await _sut.HandleAsync(new WithdrawCommand(Guid.NewGuid(), new Money(200m, Currency.EUR)), CancellationToken.None);
+        var result = await _sut.HandleAsync(new WithdrawCommand(Guid.NewGuid(), new Money(200m, Currency.EUR)),
+            CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().Contain("Account not found.");
@@ -87,7 +93,8 @@ public class WithdrawCommandHandlerTests : BankingDbContextTestBase
         Context.Accounts.Add(account);
         await Context.SaveChangesAsync();
 
-        var result = await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.EUR)), CancellationToken.None);
+        var result = await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.EUR)),
+            CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().Contain("Account is not active.");
@@ -100,7 +107,8 @@ public class WithdrawCommandHandlerTests : BankingDbContextTestBase
         Context.Accounts.Add(account);
         await Context.SaveChangesAsync();
 
-        var result = await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.USD)), CancellationToken.None);
+        var result = await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.USD)),
+            CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().Contain("Withdrawal currency does not match account currency.");
@@ -113,7 +121,8 @@ public class WithdrawCommandHandlerTests : BankingDbContextTestBase
         Context.Accounts.Add(account);
         await Context.SaveChangesAsync();
 
-        var result = await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.EUR)), CancellationToken.None);
+        var result = await _sut.HandleAsync(new WithdrawCommand(account.AccountId, new Money(200m, Currency.EUR)),
+            CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().Contain("Insufficient funds.");

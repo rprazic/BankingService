@@ -21,6 +21,8 @@ public class ExceptionMiddleware
         }
         catch (BankingValidationException ex)
         {
+            _logger.LogWarning("Validation error on {Method} {Path}: {Errors}",
+                context.Request.Method, context.Request.Path, ex.Errors);
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsJsonAsync(new ErrorResponse(ex.Errors));

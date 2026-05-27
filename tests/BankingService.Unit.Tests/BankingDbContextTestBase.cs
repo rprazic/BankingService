@@ -1,6 +1,10 @@
 using BankingService.Application.Commands.CreateTransaction;
+using BankingService.Application.Commands.Deposit;
+using BankingService.Application.Commands.Transfer;
+using BankingService.Application.Commands.Withdraw;
 using BankingService.Application.Common;
 using BankingService.Application.CQRS;
+using BankingService.Application.DTOs;
 using BankingService.Domain.Entities;
 using BankingService.Domain.Enums;
 using BankingService.Domain.ValueObjects;
@@ -8,6 +12,8 @@ using BankingService.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BankingService.Unit.Tests;
 
@@ -39,10 +45,15 @@ public abstract class BankingDbContextTestBase : IDisposable
     protected ICommandDispatcher CreateDispatcher()
     {
         var services = new ServiceCollection();
+        services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         services.AddSingleton(Context);
         services.AddScoped<ICommandHandler<CreateTransactionCommand, Result<Guid>>, CreateTransactionCommandHandler>();
+        services.AddScoped<ICommandHandler<DepositCommand, Result<MoneyDto>>, DepositCommandHandler>();
+        services.AddScoped<ICommandHandler<WithdrawCommand, Result<MoneyDto>>, WithdrawCommandHandler>();
+        services.AddScoped<ICommandHandler<TransferCommand, Result>, TransferCommandHandler>();
         services.AddScoped<ICommandDispatcher, CommandDispatcher>();
-        return services.BuildServiceProvider().GetRequiredService<ICommandDispatcher>();
+        var provider = services.BuildServiceProvider();
+        return provider.GetRequiredService<ICommandDispatcher>();
     }
 
     protected static Account CreateAccount(decimal balance = 1000m, bool isActive = true, string firstName = "Test",

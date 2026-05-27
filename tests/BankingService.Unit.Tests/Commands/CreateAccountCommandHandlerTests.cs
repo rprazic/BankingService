@@ -4,6 +4,7 @@ using BankingService.Domain.ValueObjects;
 using BankingService.Infrastructure.Services;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BankingService.Unit.Tests.Commands;
 
@@ -13,7 +14,8 @@ public class CreateAccountCommandHandlerTests : BankingDbContextTestBase
 
     public CreateAccountCommandHandlerTests()
     {
-        _sut = new CreateAccountCommandHandler(Context, new IbanGenerator(), CreateDispatcher());
+        _sut = new CreateAccountCommandHandler(Context, new IbanGenerator(), CreateDispatcher(),
+            NullLogger<CreateAccountCommandHandler>.Instance);
     }
 
     [Fact]

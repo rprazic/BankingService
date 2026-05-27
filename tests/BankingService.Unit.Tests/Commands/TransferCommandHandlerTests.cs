@@ -1,15 +1,9 @@
-using BankingService.Application.Commands.CreateTransaction;
-using BankingService.Application.Commands.Deposit;
 using BankingService.Application.Commands.Transfer;
-using BankingService.Application.Commands.Withdraw;
-using BankingService.Application.Common;
-using BankingService.Application.CQRS;
-using BankingService.Application.DTOs;
 using BankingService.Domain.Enums;
 using BankingService.Domain.ValueObjects;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using TransactionType = BankingService.Domain.Enums.TransactionType;
 
 namespace BankingService.Unit.Tests.Commands;
@@ -20,16 +14,7 @@ public class TransferCommandHandlerTests : BankingDbContextTestBase
 
     public TransferCommandHandlerTests()
     {
-        var services = new ServiceCollection();
-        services.AddSingleton(Context);
-        services.AddScoped<ICommandHandler<CreateTransactionCommand, Result<Guid>>, CreateTransactionCommandHandler>();
-        services.AddScoped<ICommandHandler<DepositCommand, Result<MoneyDto>>, DepositCommandHandler>();
-        services.AddScoped<ICommandHandler<WithdrawCommand, Result<MoneyDto>>, WithdrawCommandHandler>();
-        services.AddScoped<ICommandHandler<TransferCommand, Result>, TransferCommandHandler>();
-        services.AddScoped<ICommandDispatcher, CommandDispatcher>();
-        var dispatcher = services.BuildServiceProvider().GetRequiredService<ICommandDispatcher>();
-
-        _sut = new TransferCommandHandler(Context, dispatcher);
+        _sut = new TransferCommandHandler(Context, CreateDispatcher(), NullLogger<TransferCommandHandler>.Instance);
     }
 
     [Fact]

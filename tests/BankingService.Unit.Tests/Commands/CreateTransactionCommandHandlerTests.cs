@@ -3,6 +3,7 @@ using BankingService.Domain.Enums;
 using BankingService.Domain.ValueObjects;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BankingService.Unit.Tests.Commands;
 
@@ -12,7 +13,7 @@ public class CreateTransactionCommandHandlerTests : BankingDbContextTestBase
 
     public CreateTransactionCommandHandlerTests()
     {
-        _sut = new CreateTransactionCommandHandler(Context);
+        _sut = new CreateTransactionCommandHandler(Context, NullLogger<CreateTransactionCommandHandler>.Instance);
     }
 
     [Fact]
