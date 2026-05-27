@@ -1,23 +1,20 @@
-using BankingService.Application.Queries.GetAccountTransactions;
-using BankingService.Api.Middleware;
+using BankingService.Api.Models;
 using BankingService.Application.Common;
 using BankingService.Application.DTOs;
+using BankingService.Application.Queries.GetAccountTransactions;
 using BankingService.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BankingService.Api.Endpoints;
 
-public static class TransactionEndpoints
+public static class GetAccountTransactionsEndpoint
 {
-    public static IEndpointRouteBuilder MapTransactionEndpoints(this IEndpointRouteBuilder app)
+    public static IEndpointRouteBuilder MapGetAccountTransactions(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/v1/accounts/{accountId:guid}/transactions")
-            .WithTags("Transactions");
-
-        group.MapGet("/", GetTransactions)
+        app.MapGet("/api/v1/accounts/{accountId:guid}/transactions", Handle)
+            .WithTags("Transactions")
             .WithSummary("Get transaction history")
-            .WithDescription(
-                "Returns a paginated list of transactions for the given account, with optional date filters.")
+            .WithDescription("Returns a paginated list of transactions for the given account, with optional date filters.")
             .Produces<PagedResult<TransactionDto>>()
             .Produces<ErrorResponse>(StatusCodes.Status422UnprocessableEntity)
             .Produces<ErrorResponse>(StatusCodes.Status500InternalServerError);
@@ -25,7 +22,7 @@ public static class TransactionEndpoints
         return app;
     }
 
-    private static async Task<IResult> GetTransactions(
+    private static async Task<IResult> Handle(
         Guid accountId,
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,

@@ -163,42 +163,58 @@ Get paginated transaction history with optional date filters.
 | 201 Created | Account created |
 | 400 Bad Request | Validation failure (invalid input) |
 | 422 Unprocessable Entity | Domain failure (insufficient funds, account not found, etc.) |
+| 429 Too Many Requests | Rate limit exceeded on a mutation endpoint |
 | 500 Internal Server Error | Unexpected server error |
 
-## Error Response (400 and 422)
+## Error Response (400, 422, and 429)
 ```json
 {
   "errors": ["Insufficient funds.", "Amount must be greater than zero."]
 }
 ```
 
-## Endpoint Registration
-All endpoints are registered in `AccountEndpoints.cs` using extension methods:
+## Rate Limiting
 
-```csharp
-public static class AccountEndpoints
-{
-    public static IEndpointRouteBuilder MapAccountEndpoints(this IEndpointRouteBuilder app)
-    {
-        var group = app.MapGroup("/api/v1/accounts")
-            .WithTags("Accounts");
+Mutation endpoints (`POST /accounts`, `POST /deposits`, `POST /withdrawals`, `POST /transfers`) are rate-limited using a fixed window policy:
 
-        group.MapPost("/", CreateAccount);
-        group.MapGet("/{accountId:guid}", GetAccountDetails);
-        group.MapGet("/{accountId:guid}/balance", GetAccountBalance);
-        group.MapPost("/{accountId:guid}/deposits", Deposit);
-        group.MapPost("/{accountId:guid}/withdrawals", Withdraw);
-        group.MapPost("/{accountId:guid}/transfers", Transfer);
-        group.MapGet("/{accountId:guid}/transactions", GetTransactions);
+- **Limit**: 10 requests per minute per IP address
+- **Exceeded**: `429 Too Many Requests` with an `ErrorResponse` body
+- Read-only endpoints (`GET`) are not rate-limited
 
-        return app;
-    }
+## Endpoint Structure
 
-    // Each endpoint is a private static async method in the same class
-}
+Each endpoint lives in its own file under `BankingService.Api/Endpoints/` with a single `MapXxx` extension method on `IEndpointRouteBuilder`.
+
+```
+Endpoints/
+├── CreateAccountEndpoint.cs       — MapCreateAccount()
+├── GetAccountDetailsEndpoint.cs   — MapGetAccountDetails()
+├── GetAccountBalanceEndpoint.cs   — MapGetAccountBalance()
+├── DepositEndpoint.cs             — MapDeposit()
+├── WithdrawEndpoint.cs            — MapWithdraw()
+├── TransferEndpoint.cs            — MapTransfer()
+└── GetAccountTransactionsEndpoint.cs — MapGetAccountTransactions()
+```
+
+Request/response models live in `BankingService.Api/Models/` under the `BankingService.Api.Models` namespace:
+
+```
+Models/
+├── ErrorResponse.cs
+├── CreateAccountRequest.cs
+├── CreateAccountResponse.cs
+├── DepositRequest.cs
+├── WithdrawRequest.cs
+└── TransferRequest.cs
 ```
 
 Called from `Program.cs`:
 ```csharp
-app.MapAccountEndpoints();
+app.MapCreateAccount();
+app.MapGetAccountDetails();
+app.MapGetAccountBalance();
+app.MapDeposit();
+app.MapWithdraw();
+app.MapTransfer();
+app.MapGetAccountTransactions();
 ```

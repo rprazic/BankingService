@@ -1,3 +1,4 @@
+using BankingService.Api.Models;
 using BankingService.Application.Common;
 
 namespace BankingService.Api.Middleware;
@@ -37,6 +38,3 @@ public class ExceptionMiddleware
         }
     }
 }
-
-public record ErrorResponse(
-    [property: System.ComponentModel.Description("List of error messages describing what went wrong.")] IReadOnlyList<string> Errors);
