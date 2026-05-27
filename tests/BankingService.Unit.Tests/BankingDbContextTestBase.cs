@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 
 namespace BankingService.Unit.Tests;
 
@@ -22,6 +23,7 @@ public abstract class BankingDbContextTestBase : IDisposable
     private readonly SqliteConnection _connection;
 
     protected readonly BankingDbContext Context;
+    protected readonly FakeTimeProvider TimeProvider = new();
 
     protected BankingDbContextTestBase()
     {
@@ -46,7 +48,7 @@ public abstract class BankingDbContextTestBase : IDisposable
     {
         var services = new ServiceCollection();
         services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
-        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<TimeProvider>(TimeProvider);
         services.AddSingleton(Context);
         services.AddScoped<ICommandHandler<CreateTransactionCommand, Result<Guid>>, CreateTransactionCommandHandler>();
         services.AddScoped<ICommandHandler<DepositCommand, Result<MoneyDto>>, DepositCommandHandler>();
@@ -57,17 +59,21 @@ public abstract class BankingDbContextTestBase : IDisposable
         return provider.GetRequiredService<ICommandDispatcher>();
     }
 
-    protected static Account CreateAccount(decimal balance = 1000m, bool isActive = true, string firstName = "Test",
-        string lastName = "User", Currency currency = Currency.EUR) => new()
+    protected Account CreateAccount(decimal balance = 1000m, bool isActive = true, string firstName = "Test",
+        string lastName = "User", Currency currency = Currency.EUR)
     {
-        AccountId = Guid.NewGuid(),
-        FirstName = firstName,
-        LastName = lastName,
-        Iban = $"RS35{Guid.NewGuid():N}"[..22],
-        Currency = currency,
-        Balance = new Money(balance, currency),
-        IsActive = isActive,
-        CreatedAt = DateTime.UtcNow,
-        UpdatedAt = DateTime.UtcNow
-    };
+        var now = TimeProvider.GetUtcNow().UtcDateTime;
+        return new Account
+        {
+            AccountId = Guid.NewGuid(),
+            FirstName = firstName,
+            LastName = lastName,
+            Iban = $"RS35{Guid.NewGuid():N}"[..22],
+            Currency = currency,
+            Balance = new Money(balance, currency),
+            IsActive = isActive,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+    }
 }

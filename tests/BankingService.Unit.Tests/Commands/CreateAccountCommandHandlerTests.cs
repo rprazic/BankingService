@@ -15,7 +15,7 @@ public class CreateAccountCommandHandlerTests : BankingDbContextTestBase
     public CreateAccountCommandHandlerTests()
     {
         _sut = new CreateAccountCommandHandler(Context, new IbanGenerator(), CreateDispatcher(),
-            NullLogger<CreateAccountCommandHandler>.Instance, TimeProvider.System);
+            NullLogger<CreateAccountCommandHandler>.Instance, TimeProvider);
     }
 
     [Fact]

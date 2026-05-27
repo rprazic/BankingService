@@ -14,7 +14,7 @@ public class DepositCommandHandlerTests : BankingDbContextTestBase
 
     public DepositCommandHandlerTests()
     {
-        _sut = new DepositCommandHandler(Context, CreateDispatcher(), NullLogger<DepositCommandHandler>.Instance, TimeProvider.System);
+        _sut = new DepositCommandHandler(Context, CreateDispatcher(), NullLogger<DepositCommandHandler>.Instance, TimeProvider);
     }
 
     [Fact]
