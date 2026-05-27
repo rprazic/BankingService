@@ -9,7 +9,7 @@ COPY src/BankingService.Application/BankingService.Application.csproj         sr
 COPY src/BankingService.Infrastructure/BankingService.Infrastructure.csproj   src/BankingService.Infrastructure/
 COPY src/BankingService.Api/BankingService.Api.csproj                         src/BankingService.Api/
 
-RUN dotnet restore
+RUN dotnet restore src/BankingService.Api/BankingService.Api.csproj
 
 # Copy source and publish
 COPY src/ src/
@@ -23,7 +23,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 # Non-root user for security
-RUN adduser --disabled-password --no-create-home appuser
+RUN useradd --no-create-home -r appuser && \
+    mkdir -p /app/data && \
+    chown appuser /app/data
 USER appuser
 
 COPY --from=build /app/publish .
