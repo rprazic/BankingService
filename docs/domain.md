@@ -49,6 +49,13 @@ src/
 │   │   ├── AccountDto.cs
 │   │   ├── AccountBalanceDto.cs
 │   │   └── TransactionDto.cs
+│   ├── Mappings/
+│   │   ├── MoneyDtoMapper.cs
+│   │   ├── AccountDtoMapper.cs
+│   │   ├── AccountBalanceDtoMapper.cs
+│   │   ├── TransactionDtoMapper.cs
+│   │   ├── CreateAccountMapper.cs
+│   │   └── CreateTransactionMapper.cs
 │   ├── AccountService.cs
 │   ├── DependencyInjection.cs
 │   └── IAccountService.cs
@@ -141,6 +148,52 @@ builder.OwnsOne(a => a.Balance, money =>
     money.Property(m => m.Currency).HasColumnName("BalanceCurrency").HasConversion<string>();
 });
 ```
+
+## Mapping Layer
+
+All entity ↔ DTO and command → entity conversions live in `Application/Mappings/` as **static classes**. No DI registration — call them directly.
+
+### Entity → DTO mappers
+
+Each mapper exposes two methods:
+
+| Method | Use case |
+|---|---|
+| `ToDto(this TEntity)` | In-memory mapping (already-loaded entity) |
+| `Projection()` | Returns `Expression<Func<TEntity, TDto>>` for use with EF Core `.Select()` — translates to SQL |
+
+**EF Core constraint**: `Projection()` expressions must inline all sub-mappings. `MoneyDtoMapper.ToDto()` cannot be called inside an expression tree (EF Core cannot translate arbitrary method calls to SQL), so every `Projection()` writes `new MoneyDto(e.Amount.Amount, e.Amount.Currency)` inline. `ToDto()` in-memory methods do reuse `MoneyDtoMapper.ToDto()`.
+
+```csharp
+// In a query handler — projection pushes column selection to SQL
+var dto = await _context.Accounts
+    .AsNoTracking()
+    .Where(a => a.AccountId == query.AccountId)
+    .Select(AccountDtoMapper.Projection())
+    .FirstOrDefaultAsync(ct);
+```
+
+### Command → entity mappers
+
+`CreateAccountMapper.ToEntity(command, iban, now)` and `CreateTransactionMapper.ToEntity(command)` use object-initializer syntax, which is the only way to assign `init`-only properties on domain entities outside their own constructor.
+
+```csharp
+// In a command handler — mapper owns all init-property assignment
+var account = CreateAccountMapper.ToEntity(command, _ibanGenerator.Generate(), now);
+```
+
+### Mapper inventory
+
+| Mapper | Direction | Notes |
+|---|---|---|
+| `MoneyDtoMapper` | `Money` → `MoneyDto` | `ToDto()` only; no `Projection()` (always inlined) |
+| `AccountDtoMapper` | `Account` → `AccountDto` | `ToDto()` + `Projection()` |
+| `AccountBalanceDtoMapper` | `Account` → `AccountBalanceDto` | `ToDto()` + `Projection()` |
+| `TransactionDtoMapper` | `Transaction` → `TransactionDto` | `ToDto()` + `Projection()` |
+| `CreateAccountMapper` | `CreateAccountCommand` → `Account` | `ToEntity(command, iban, now)` |
+| `CreateTransactionMapper` | `CreateTransactionCommand` → `Transaction` | `ToEntity(command)` |
+
+---
 
 ## DI Registration
 

@@ -177,43 +177,30 @@ public class CreateAccountCommandHandler : ICommandHandler<CreateAccountCommand,
 {
     private readonly BankingDbContext _context;
     private readonly IIbanGenerator _ibanGenerator;
+    private readonly ICommandDispatcher _dispatcher;
 
-    public CreateAccountCommandHandler(BankingDbContext context, IIbanGenerator ibanGenerator)
+    public CreateAccountCommandHandler(BankingDbContext context, IIbanGenerator ibanGenerator,
+        ICommandDispatcher dispatcher)
     {
         _context = context;
         _ibanGenerator = ibanGenerator;
+        _dispatcher = dispatcher;
     }
 
     public async Task<Result<Guid>> HandleAsync(
         CreateAccountCommand command, CancellationToken ct, bool saveChanges = true)
     {
         var now = DateTime.UtcNow;
-
-        var account = new Account
-        {
-            AccountId = Guid.NewGuid(),
-            FirstName = command.FirstName,
-            LastName = command.LastName,
-            Iban = _ibanGenerator.Generate(),
-            Currency = command.Currency,
-            Balance = new Money(command.InitialDeposit, command.Currency),
-            IsActive = true,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
-
-        var transaction = new Transaction
-        {
-            TransactionId = Guid.NewGuid(),
-            AccountId = account.AccountId,
-            Type = TransactionType.Credit,
-            Amount = new Money(command.InitialDeposit, command.Currency),
-            Description = "Initial deposit",
-            CreatedAt = DateTime.UtcNow
-        };
-        
+        var account = CreateAccountMapper.ToEntity(command, _ibanGenerator.Generate(), now);
         _context.Accounts.Add(account);
-        _context.Transactions.Add(transaction);
+
+        if (command.InitialDeposit > 0)
+        {
+            await _dispatcher.DispatchAsync<CreateTransactionCommand, Result<Guid>>(
+                new CreateTransactionCommand(account.AccountId, TransactionType.Credit,
+                    command.InitialDeposit, now, "Initial deposit"),
+                ct, saveChanges: false);
+        }
 
         if (saveChanges)
             await _context.SaveChangesAsync(ct);
@@ -327,22 +314,15 @@ public class GetAccountDetailsQueryHandler : IQueryHandler<GetAccountDetailsQuer
 
     public async Task<Result<AccountDto>> HandleAsync(GetAccountDetailsQuery query, CancellationToken ct)
     {
-        var account = await _context.Accounts
+        var dto = await _context.Accounts
             .AsNoTracking()
-            .FirstOrDefaultAsync(a => a.AccountId == query.AccountId, ct);
+            .Where(a => a.AccountId == query.AccountId)
+            .Select(AccountDtoMapper.Projection())
+            .FirstOrDefaultAsync(ct);
 
-        if (account is null)
-            return Result<AccountDto>.Failure("Account not found.");
-
-        return Result<AccountDto>.Success(new AccountDto(
-            account.AccountId,
-            account.FirstName,
-            account.LastName,
-            account.Iban,
-            account.Currency,
-            account.Balance.Amount,
-            account.CreatedAt
-        ));
+        return dto is null
+            ? Result<AccountDto>.Failure("Account not found.")
+            : Result<AccountDto>.Success(dto);
     }
 }
 ```
@@ -385,7 +365,7 @@ var items = await query
     .OrderByDescending(t => t.CreatedAt)
     .Skip((request.Page - 1) * request.PageSize)
     .Take(request.PageSize)
-    .Select(t => new TransactionDto(...))
+    .Select(TransactionDtoMapper.Projection())
     .ToListAsync(ct);
 
 return Result<PagedResult<TransactionDto>>.Success(
